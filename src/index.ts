@@ -5,19 +5,45 @@ import { ApolloServer } from "apollo-server-express";
 import path from "path";
 import dotenv from "dotenv";
 import connectToDB from "./util/connectToDB";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 import { buildSchema } from "type-graphql";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
-import { HelloResolver } from "./resolvers/hello";
-dotenv.config({ path: path.resolve(__dirname, "./.env") });
+import { HelloResolver } from "./resolvers/Hello";
+import { COOKIE_NAME } from "./constraint";
+import { Context } from "./types/Context";
+import { UserResolver } from "./resolvers/User";
+import { PostResolver } from "./resolvers/Post";
+import {CommentResolver} from "./resolvers/Comment";
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const main = async () => {
   const app = express();
-  await connectToDB(process.env.DB_URL as string);
+  const MongoUrl = process.env.DB_URL as string;
+  await connectToDB(MongoUrl);
+  app.use(
+    session({
+      name: COOKIE_NAME,
+      store: MongoStore.create({ mongoUrl: process.env.DB_URL as string }),
+      cookie: {
+        maxAge: 1000 * 60 * 60, // 1 HOURS
+        httpOnly: true,
+        sameSite: "lax", //csrf
+        secure: process.env.NODE_ENV === "production", //cookie only works in https
+      },
+      secret: process.env.COOKIE_SECRET as string,
+      resave: false,
+      saveUninitialized: false,
+    })
+  );
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver],
+      resolvers: [HelloResolver, UserResolver,PostResolver, CommentResolver],
       validate: false,
     }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
+    context: ({ req, res }): Context => {
+      return { req, res };
+    },
   });
   await apolloServer.start();
   apolloServer.applyMiddleware({ app, cors: false });
