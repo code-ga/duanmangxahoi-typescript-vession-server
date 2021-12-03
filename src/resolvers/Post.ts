@@ -8,7 +8,6 @@ import {
   UseMiddleware,
 } from "type-graphql";
 import { postModel } from "../model/post";
-// import { bucket } from "../firebase";
 import { CreatePostInput } from "../types/CreatePostInput";
 import { CreatePostMutationResponse } from "../types/CreatePostMutationResponse";
 import { Context } from "../types/Context";
