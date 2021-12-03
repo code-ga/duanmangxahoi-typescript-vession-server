@@ -42,4 +42,6 @@ export enum CodeError {
   successFully_updated_user = 239,
   assign_role_success = 240,
   access_denied = 401,
+  post_already_liked = 241,
+  post_already_unliked = 242,
 }

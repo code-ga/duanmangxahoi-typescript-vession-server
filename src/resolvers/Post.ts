@@ -154,7 +154,7 @@ export class PostResolver {
         };
       }
       const dataUpdate =
-        typeof dataInput.title !== "undefined" 
+        typeof dataInput.title !== "undefined"
           ? {
               ...dataInput,
               photo: [],
@@ -284,6 +284,21 @@ export class PostResolver {
           ],
         };
       }
+      for (let i = 0; i < postData.likes.length; i++) {
+        if (postData.likes[i] === req.session.userId) {
+          return {
+            code: CodeError.post_already_liked,
+            message: "You already liked this post",
+            success: false,
+            errors: [
+              {
+                field: "id",
+                message: "You already liked this post",
+              },
+            ],
+          };
+        }
+      }
       await postModel.findOneAndUpdate(
         { _id: id },
         {
@@ -327,6 +342,21 @@ export class PostResolver {
             },
           ],
         };
+      }
+      for (let i = 0; i < postData.unlike .length; i++) {
+        if (postData.unlike[i] === req.session.userId) {
+          return {
+            code: CodeError.post_already_unliked,
+            message: "You already unliked this post",
+            success: false,
+            errors: [
+              {
+                field: "id",
+                message: "You already unliked this post",
+              },
+            ],
+          };
+        }
       }
       await postModel.findOneAndUpdate(
         { _id: id },
