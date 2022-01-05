@@ -3,13 +3,14 @@ import {
   ModelOptions,
   Ref,
   prop as Property,
-  DocumentType,
 } from "@typegoose/typegoose";
 import { defaultCategory } from "../constraint";
 import { Field, ObjectType } from "type-graphql";
 import user from "./user";
-import mongoose from "mongoose";
+import Comment from "./comment";
+import LikeModel from "./LikeModel";
 // import * as autopopulate from "mongoose-autopopulate";
+// import VoteModel from './VoteModel';
 // TODO : REMOVE AUTOPOPULATE
 
 @ObjectType()
@@ -61,22 +62,20 @@ export class Post {
   @Property({ default: 0 })
   public views: number;
 
-  @Field((_type) => [String], { nullable: true })
-  @Property({ default: [], ref: () => user })
-  public likes: Ref<user>[];
-
   @Field(() => [String], { nullable: true })
-  @Property({ default: [], required: true })
+  @Property({ default: [], required: true , ref: () => Comment})
   public comments: string[];
 
   // is alert post
   @Field()
   @Property({ default: false })
   public isAlert: boolean;
-  // unlike field
-  @Field(() => [String], { nullable: true })
-  @Property({ default: [], required: true, ref: () => user })
-  public unlike: Ref<user>[];
+  
+  // like field
+  @Field((_type) => [String])
+  @Property({ default: [], required: true, ref: () => LikeModel })
+  public likes: string[];
+
 }
 export default Post;
 export const postModel = getModelForClass(Post);

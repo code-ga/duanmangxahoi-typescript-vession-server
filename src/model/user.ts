@@ -4,7 +4,9 @@ import {
   ModelOptions,
   Ref,
 } from "@typegoose/typegoose";
+import { role } from "../types/RoleEnum";
 import { Field, ObjectType } from "type-graphql";
+import LikeModel from "./LikeModel";
 
 @ModelOptions({ schemaOptions: { timestamps: true } })
 @ObjectType()
@@ -33,21 +35,29 @@ class User {
   @prop()
   updatedAt: Date;
   // friend field
-  @Field((_type) => [String], { nullable: true })
-  @prop({
-    ref: () => User,
-    default: [],
-  })
-  public friend: Ref<User>[];
-  @Field((_type) => [String], { nullable: true })
-  @prop({
-    ref: () => User,
-    default: [],
-  })
-  public friendRequest: Ref<User>[];
+  // @Field((_type) => [String], { nullable: true })
+  // @prop({
+  //   ref: () => User,
+  //   default: [],
+  // })
+  // public friend: Ref<User>[];
+  // @Field((_type) => [String], { nullable: true })
+  // @prop({
+  //   ref: () => User,
+  //   default: [],
+  // })
+  // public friendRequest: Ref<User>[];
   // admin field
-  @prop({ default: false })
-  public admin: boolean;
+  @Field((_type) =>role, { nullable: true })
+  @prop( { default: false })
+  public role: role;
+  // like field
+  @Field((_type) => [String], { nullable: true })
+  @prop({
+    ref: () => User,
+    default: [],
+  })
+  public likes: string[];
 }
 export default User;
 export const user = getModelForClass(User);

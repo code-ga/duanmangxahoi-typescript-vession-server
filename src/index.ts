@@ -14,12 +14,13 @@ import { COOKIE_NAME } from "./constraint";
 import { Context } from "./types/Context";
 import { UserResolver } from "./resolvers/User";
 import { PostResolver } from "./resolvers/Post";
-import {CommentResolver} from "./resolvers/Comment";
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+import { CommentResolver } from "./resolvers/Comment";
+dotenv.config({ path: path.resolve(__dirname, "./.env") });
 const main = async () => {
   const app = express();
   const MongoUrl = process.env.DB_URL as string;
-  await connectToDB(MongoUrl);
+  const connection = await connectToDB(MongoUrl);
+
   app.use(
     session({
       name: COOKIE_NAME,
@@ -37,12 +38,12 @@ const main = async () => {
   );
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, UserResolver,PostResolver, CommentResolver],
+      resolvers: [HelloResolver, UserResolver, PostResolver, CommentResolver],
       validate: false,
     }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
     context: ({ req, res }): Context => {
-      return { req, res };
+      return { req, res, connection };
     },
   });
   await apolloServer.start();

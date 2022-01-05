@@ -44,4 +44,7 @@ export enum CodeError {
   access_denied = 401,
   post_already_liked = 241,
   post_already_unliked = 242,
+  vote_your_post = 243,
+  like_post_already_exists = 244,
+  create_admin_account_success = 245,
 }

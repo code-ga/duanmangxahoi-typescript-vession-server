@@ -8,6 +8,13 @@ import { ValidationResisterInput } from "../util/ValidationResisterInput";
 import { LoginInput } from "./../types/LoginInput";
 import { Context } from "../types/Context";
 import { COOKIE_NAME } from "../constraint";
+import { role } from "../types/RoleEnum";
+import { registerEnumType } from "type-graphql";
+registerEnumType(role, {
+  name: "role", // this one is mandatory
+  description: "the role enum", // this one is optional
+});
+
 @Resolver()
 export class UserResolver {
   @Mutation(() => UserMutationResponse)
@@ -48,6 +55,7 @@ export class UserResolver {
         email: email,
         password: hashedPassword,
         username: username,
+        role: role.user,
       });
       NewUser = await NewUser.save();
       req.session.userId = NewUser._id;
@@ -221,14 +229,12 @@ export class UserResolver {
           ],
         };
       }
-      userData.friend = [];
-      userData.friendRequest = [];
       // console.log(userData);
       return {
         code: CodeError.successFully_get_user,
         success: true,
         user: userData,
-        message: "happy ! you are get user",
+        message: "happy ! you are get user author info",
       };
     } catch (err) {
       console.log(err);
@@ -262,7 +268,7 @@ export class UserResolver {
       }
       const userAdmin = await user.findOne({
         _id: req.session.userId,
-        isAdmin: true,
+        role: role.superAdmin,
       });
       if (!userAdmin) {
         return {
@@ -277,7 +283,7 @@ export class UserResolver {
           ],
         };
       }
-      await user.findOneAndUpdate({ _id: userId }, { isAdmin: true });
+      await user.findOneAndUpdate({ _id: userId }, { role: role.admin });
       const userAfterUpdate = (await user.findById(userId)) || undefined;
       console.log("update user to admin successful");
       return {
@@ -292,6 +298,82 @@ export class UserResolver {
         code: CodeError.internal_server_error,
         success: false,
         message: "Internal server error " + err.message,
+      };
+    }
+  }
+  // create admin user
+  @Mutation(() => UserMutationResponse)
+  async createAdminAccount(
+    @Arg("RegisterInput") ResisterInput: resisterInput,
+    @Ctx() { req, res }: Context
+  ): Promise<UserMutationResponse> {
+    try {
+      var UserIsSuperAdmin = await user.findOne({
+        _id: req.session.userId,
+        role: role.superAdmin,
+      });
+      if (!UserIsSuperAdmin) {
+        return {
+          code: CodeError.access_denied,
+          success: false,
+          message: "access denied",
+          error: [
+            {
+              field: "userId",
+              message: "access denied",
+            },
+          ],
+        };
+      }
+      var errorDataInput = ValidationResisterInput(ResisterInput);
+      if (errorDataInput) {
+        return errorDataInput;
+      }
+      const { email, password, username } = ResisterInput;
+      const exiting =
+        (await user.findOne({ email })) || (await user.findOne({ username }));
+      if (exiting) {
+        return {
+          code:
+            exiting.username === username
+              ? CodeError.username_already_exists
+              : CodeError.email_already_exists,
+          success: false,
+          message: `${
+            exiting.username === username ? "username" : "email"
+          } are ready exiting`,
+          error: [
+            {
+              field: exiting.username === username ? "username" : "email",
+              message: `have two ${
+                exiting.username === username ? "username" : "email"
+              } in database`,
+            },
+          ],
+        };
+      }
+      const hashedPassword = await bcrypt.hash(password, 4);
+      let NewUser = new user({
+        email: email,
+        password: hashedPassword,
+        username: username,
+        role: role.admin,
+      });
+      NewUser = await NewUser.save();
+      console.log("register new user admin successful");
+      return {
+        code: CodeError.create_admin_account_success,
+        success: true,
+        user: NewUser,
+        message:
+          "happy ! user register is successful . now you can use this app",
+      };
+    } catch (err) {
+      console.log(err);
+      return {
+        code: CodeError.internal_server_error,
+        success: false,
+        message: "Internal server error" + err.message,
       };
     }
   }

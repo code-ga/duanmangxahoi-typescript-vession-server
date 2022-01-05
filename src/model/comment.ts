@@ -33,19 +33,15 @@ export class Comment {
   @Field()
   public _id: string;
   @Field((_type) => [String])
-  @Property({ required: true, default: [], ref: () => user })
-  public likes: Ref<user>[];
+  @Property({ required: true, default: [] })
+  public likes: string[];
   @Field((_type) => [String])
-  @Property()
-  public postId: Ref<post>;
+  @Property({ required: true })
+  public postId: string;
   // photo comment
   @Field((_type) => String)
-  @Property({ required: true, default: []})
+  @Property({ required: true, default: [] })
   public photo: string[];
-  // unlike comment
-  @Field((_type) => [String])
-  @Property({ required: true, default: [], ref: () => user })
-  public unlike: Ref<user>[];
 }
 export default Comment;
 export const CommentModel = getModelForClass(Comment);

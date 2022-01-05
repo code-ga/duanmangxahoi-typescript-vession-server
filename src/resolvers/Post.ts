@@ -6,6 +6,8 @@ import {
   Resolver,
   Query,
   UseMiddleware,
+  Int,
+  registerEnumType,
 } from "type-graphql";
 import { postModel } from "../model/post";
 import { CreatePostInput } from "../types/CreatePostInput";
@@ -20,6 +22,21 @@ import { IsAuthorized } from "../middleware/checkAuth";
 import { defaultCategory } from "../constraint";
 import { user } from "../model/user";
 import { CommentModel } from "./../model/comment";
+import { LikeType } from "../types/likeType";
+import {
+  checkRoleCanCreateAlertPost,
+  checkRoleCanDeleteAlertPost,
+  checkRoleCanDeletePost,
+  checkRoleCanEditPost,
+  checkRoleCanUpdateAlertPost,
+} from "../util/checkRole";
+import { likeModel } from "../model/LikeModel";
+import { LikeModelType } from "../types/likeTypeModel";
+
+registerEnumType(LikeType, {
+  name: "LikeType",
+  description: "Like type",
+});
 
 @Resolver()
 export class PostResolver {
@@ -122,11 +139,21 @@ export class PostResolver {
     @Ctx() { req, res }: Context
   ): Promise<UpdatePostMutationResponse> {
     try {
+      const userData = await user.findOne({ _id: req.session.userId });
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          message: "User not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "User not found",
+            },
+          ],
+        };
+      }
       const postData = await postModel.findOne({ _id: id });
-      const updateUserIsAdmin = await user.findOne({
-        _id: req.session.userId,
-        admin: true,
-      });
       if (!postData) {
         return {
           code: CodeError.post_not_found,
@@ -140,6 +167,8 @@ export class PostResolver {
           ],
         };
       }
+      const updateUserIsAdmin = checkRoleCanEditPost(userData.role);
+
       if (postData.author !== req.session.userId && !updateUserIsAdmin) {
         return {
           code: CodeError.forbidden,
@@ -193,11 +222,21 @@ export class PostResolver {
     @Ctx() { req, res }: Context
   ): Promise<UpdatePostMutationResponse> {
     try {
+      const userData = await user.findOne({ _id: req.session.userId });
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          message: "User not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "User not found",
+            },
+          ],
+        };
+      }
       const postData = await postModel.findOne({ _id: id });
-      const updateUserIsAdmin = await user.findOne({
-        _id: req.session.userId,
-        admin: true,
-      });
       if (!postData) {
         return {
           code: CodeError.post_not_found,
@@ -211,6 +250,9 @@ export class PostResolver {
           ],
         };
       }
+
+      const updateUserIsAdmin = checkRoleCanDeletePost(userData.role);
+
       if (postData.author !== req.session.userId && !updateUserIsAdmin) {
         return {
           code: CodeError.forbidden,
@@ -262,122 +304,6 @@ export class PostResolver {
       };
     }
   }
-  // user like post
-  @Mutation(() => UpdatePostMutationResponse)
-  @UseMiddleware(IsAuthorized)
-  async likePost(
-    @Arg("id") id: string,
-    @Ctx() { req, res }: Context
-  ): Promise<UpdatePostMutationResponse> {
-    try {
-      const postData = await postModel.findOne({ _id: id });
-      if (!postData) {
-        return {
-          code: CodeError.post_not_found,
-          message: "Post you want to like is not found",
-          success: false,
-          errors: [
-            {
-              field: "id",
-              message: "Post you want to like is not found",
-            },
-          ],
-        };
-      }
-      for (let i = 0; i < postData.likes.length; i++) {
-        if (postData.likes[i] === req.session.userId) {
-          return {
-            code: CodeError.post_already_liked,
-            message: "You already liked this post",
-            success: false,
-            errors: [
-              {
-                field: "id",
-                message: "You already liked this post",
-              },
-            ],
-          };
-        }
-      }
-      await postModel.findOneAndUpdate(
-        { _id: id },
-        {
-          likes: [...postData.likes, req.session.userId],
-        }
-      );
-      const postReturn = await postModel.find({});
-      return {
-        code: CodeError.like_post_success,
-        message: "Post liked successfully",
-        post: postReturn,
-        success: true,
-      };
-    } catch (error) {
-      console.log(error);
-      return {
-        code: CodeError.internal_server_error,
-        message: "Internal Server Error server error is the " + error.message,
-        success: false,
-      };
-    }
-  }
-  // user unlike post
-  @Mutation(() => UpdatePostMutationResponse)
-  @UseMiddleware(IsAuthorized)
-  async unlikePost(
-    @Arg("id") id: string,
-    @Ctx() { req, res }: Context
-  ): Promise<UpdatePostMutationResponse> {
-    try {
-      const postData = await postModel.findOne({ _id: id });
-      if (!postData) {
-        return {
-          code: CodeError.post_not_found,
-          message: "Post you want to unlike is not found",
-          success: false,
-          errors: [
-            {
-              field: "id",
-              message: "Post you want to unlike is not found",
-            },
-          ],
-        };
-      }
-      for (let i = 0; i < postData.unlike .length; i++) {
-        if (postData.unlike[i] === req.session.userId) {
-          return {
-            code: CodeError.post_already_unliked,
-            message: "You already unliked this post",
-            success: false,
-            errors: [
-              {
-                field: "id",
-                message: "You already unliked this post",
-              },
-            ],
-          };
-        }
-      }
-      await postModel.findOneAndUpdate(
-        { _id: id },
-        { $push: { unlike: req.session.userId } }
-      );
-      const postReturn = await postModel.find({});
-      return {
-        code: CodeError.unlike_post_success,
-        message: "Post unliked successfully",
-        post: postReturn,
-        success: true,
-      };
-    } catch (error) {
-      console.log(error);
-      return {
-        code: CodeError.internal_server_error,
-        message: "Internal Server Error server error is the " + error.message,
-        success: false,
-      };
-    }
-  }
   @Mutation(() => CreatePostMutationResponse)
   @UseMiddleware(IsAuthorized)
   async CreateAlertPost(
@@ -385,7 +311,22 @@ export class PostResolver {
     @Ctx() { req, res }: Context
   ) {
     try {
-      if (!(await user.findOne({ _id: req.session.userId, admin: true }))) {
+      const userData = await user.findOne({ _id: req.session.userId });
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          message: "User not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "User not found",
+            },
+          ],
+        };
+      }
+      const permission = checkRoleCanCreateAlertPost(userData.role);
+      if (!permission) {
         return {
           code: CodeError.forbidden,
           message: "You are not allowed to create this post",
@@ -433,7 +374,22 @@ export class PostResolver {
     @Ctx() { req, res }: Context
   ) {
     try {
-      if (!(await user.findOne({ _id: req.session.userId, admin: true }))) {
+      const userData = await user.findOne({ _id: req.session.userId });
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          message: "User not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "User not found",
+            },
+          ],
+        };
+      }
+      const permission = checkRoleCanUpdateAlertPost(userData.role);
+      if (!permission) {
         return {
           code: CodeError.forbidden,
           message: "You are not allowed to update this post",
@@ -498,7 +454,22 @@ export class PostResolver {
   @UseMiddleware(IsAuthorized)
   async DeleteAlertPost(@Arg("id") id: string, @Ctx() { req, res }: Context) {
     try {
-      if (!(await user.findOne({ _id: req.session.userId, admin: true }))) {
+      const userData = await user.findOne({ _id: req.session.userId });
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          message: "User not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "User not found",
+            },
+          ],
+        };
+      }
+      const permission = checkRoleCanDeleteAlertPost(userData.role);
+      if (!permission) {
         return {
           code: CodeError.forbidden,
           message: "You are not allowed to delete this post",
@@ -560,6 +531,100 @@ export class PostResolver {
         message: "Internal Server Error server error is the " + error.message,
         success: false,
       };
+    }
+  }
+  // user like post
+  @Mutation(() => UpdatePostMutationResponse)
+  @UseMiddleware(IsAuthorized)
+  async likePost(
+    @Arg("id") PostId: string,
+    @Arg("likeType") likeType: LikeType,
+    @Ctx() { req : {session:{userId}}, res, connection }: Context
+  ): Promise<UpdatePostMutationResponse> {
+    let session = await connection.startSession();
+    session.startTransaction();
+    try {
+      const postData = await postModel.findOne({ _id: PostId });
+      if (!postData) {
+        return {
+          code: CodeError.post_not_found,
+          message: "Post not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "Post not found",
+            },
+          ],
+        };
+      }
+      const userData = await user.findOne({ _id: userId });
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          message: "User not found",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "User not found",
+            },
+          ],
+        };
+      }
+      const likeData = await likeModel.findOne({
+        userId: userId,
+        ObjectId: PostId,
+      });
+      if (likeData) {
+        return {
+          code: CodeError.like_post_already_exists,
+          message: "Like post already exists",
+          success: false,
+          errors: [
+            {
+              field: "id",
+              message: "Like post already exists",
+            },
+          ],
+        };
+      }
+      const like = new likeModel({
+        userId: userId,
+        ObjectId: PostId,
+        value: likeType,
+        type: LikeModelType.post,
+      });
+      await like.save();
+      const post = await postModel.findOneAndUpdate(
+        { _id: PostId },
+        {
+          likes: [...postData.likes, like._id],
+        })
+      user.findOneAndUpdate(
+        { _id: userId },
+        {
+          likes: [...userData.likes, like._id],
+        }
+      );
+
+      return {
+        code: CodeError.like_post_success,
+        message: "Like post successfully",
+        post : await postModel.find({_id: PostId}),
+        success: true,
+      };
+
+    } catch (error) {
+      await session.abortTransaction();
+      console.log(error);
+      return {
+        code: CodeError.internal_server_error,
+        message: "Internal Server Error server error is the " + error.message,
+        success: false,
+      };
+    } finally {
+      await session.endSession();
     }
   }
 }
