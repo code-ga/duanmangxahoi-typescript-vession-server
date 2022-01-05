@@ -15,12 +15,12 @@ import { Context } from "./types/Context";
 import { UserResolver } from "./resolvers/User";
 import { PostResolver } from "./resolvers/Post";
 import { CommentResolver } from "./resolvers/Comment";
+import { createAdminUser } from "./util/createAdminUser";
 dotenv.config({ path: path.resolve(__dirname, "./.env") });
 const main = async () => {
   const app = express();
   const MongoUrl = process.env.DB_URL as string;
   const connection = await connectToDB(MongoUrl);
-
   app.use(
     session({
       name: COOKIE_NAME,
@@ -36,6 +36,8 @@ const main = async () => {
       saveUninitialized: false,
     })
   );
+
+  await createAdminUser();
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
       resolvers: [HelloResolver, UserResolver, PostResolver, CommentResolver],
