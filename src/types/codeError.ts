@@ -47,4 +47,7 @@ export enum CodeError {
   vote_your_post = 243,
   like_post_already_exists = 244,
   create_admin_account_success = 245,
+  old_password_not_valid = 246,
+  new_password_not_valid = 247,
+  change_password_success = 248,
 }

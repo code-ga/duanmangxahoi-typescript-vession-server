@@ -50,7 +50,7 @@ class User {
   // admin field
   @Field((_type) =>role, { nullable: true })
   @prop( { default: false })
-  public role: role;
+  public role: role[];
   // like field
   @Field((_type) => [String], { nullable: true })
   @prop({

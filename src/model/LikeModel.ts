@@ -7,6 +7,7 @@ import {
 import { LikeType } from "../types/likeType";
 import { Field, ObjectType } from "type-graphql";
 import { LikeModelType } from "../types/likeTypeModel";
+import { emojiType } from "../types/EmojiType";
 
 @ModelOptions({ schemaOptions: { timestamps: true } })
 @ObjectType()
@@ -25,6 +26,10 @@ class LikeModel {
   @Field()
   @prop({ required: true })
   public type: LikeModelType;
+
+  @Field()
+  @prop({ required: true , default: emojiType.like})
+  public emoji: emojiType;
  
 
   @Field()

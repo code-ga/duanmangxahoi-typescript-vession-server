@@ -10,6 +10,8 @@ import { Context } from "../types/Context";
 import { COOKIE_NAME } from "../constraint";
 import { role } from "../types/RoleEnum";
 import { registerEnumType } from "type-graphql";
+import { ChangePasswordInputType } from "./../types/changePasswordInputType";
+import { ValidationChangePasswordInput } from "src/util/validationPasswordInput";
 registerEnumType(role, {
   name: "role", // this one is mandatory
   description: "the role enum", // this one is optional
@@ -55,7 +57,7 @@ export class UserResolver {
         email: email,
         password: hashedPassword,
         username: username,
-        role: role.user,
+        role: [role.user],
       });
       NewUser = await NewUser.save();
       req.session.userId = NewUser._id;
@@ -245,14 +247,11 @@ export class UserResolver {
       };
     }
   }
-  // update user to admin
+  // get my profile
   @Mutation(() => UserMutationResponse)
-  async updateUserToAdmin(
-    @Arg("userId") userId: string,
-    @Ctx() { req }: Context
-  ): Promise<UserMutationResponse> {
+  async getMyProfile(@Ctx() { req }: Context): Promise<UserMutationResponse> {
     try {
-      const userData = await user.findById(userId);
+      let userData = await user.findById(req.session.userId);
       if (!userData) {
         return {
           code: CodeError.user_not_found,
@@ -266,31 +265,12 @@ export class UserResolver {
           ],
         };
       }
-      const userAdmin = await user.findOne({
-        _id: req.session.userId,
-        role: role.superAdmin,
-      });
-      if (!userAdmin) {
-        return {
-          code: CodeError.access_denied,
-          success: false,
-          message: "access denied",
-          error: [
-            {
-              field: "userId",
-              message: "access denied",
-            },
-          ],
-        };
-      }
-      await user.findOneAndUpdate({ _id: userId }, { role: role.admin });
-      const userAfterUpdate = (await user.findById(userId)) || undefined;
-      console.log("update user to admin successful");
+      console.log("get my profile successful");
       return {
-        code: CodeError.assign_role_success,
+        code: CodeError.successFully_get_user,
         success: true,
-        user: userAfterUpdate,
-        message: "happy ! you are update user to admin",
+        user: userData,
+        message: "happy ! you are get my profile",
       };
     } catch (err) {
       console.log(err);
@@ -301,6 +281,58 @@ export class UserResolver {
       };
     }
   }
+  // change password user
+  @Mutation(() => UserMutationResponse)
+  async changePasswordUser(
+    @Arg("changePasswordInput") changePasswordInput: ChangePasswordInputType,
+    @Ctx() { req }: Context
+  ): Promise<UserMutationResponse> {
+    try {
+      let userData = await user.findById(req.session.userId);
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          success: false,
+          message: "user not found",
+          error: [
+            {
+              field: "userId",
+              message: "user not found",
+            },
+          ],
+        };
+      }
+      const errorDataInput = await ValidationChangePasswordInput(
+        changePasswordInput,
+        userData.password
+      );
+      if (errorDataInput) {
+        return errorDataInput;
+      }
+      const hashedPassword = await bcrypt.hash(
+        changePasswordInput.newPassword,
+        4
+      );
+      await user.findOneAndUpdate(
+        { _id: req.session.userId },
+        { password: hashedPassword }
+      );
+      console.log("change password successful");
+      return {
+        code: CodeError.change_password_success,
+        success: true,
+        message: "happy ! you are change password",
+      };
+    } catch (err) {
+      console.log(err);
+      return {
+        code: CodeError.internal_server_error,
+        success: false,
+        message: "Internal server error " + err.message,
+      };
+    }
+  }
+  // admin User everyone must to write admin in here
   // create admin user
   @Mutation(() => UserMutationResponse)
   async createAdminAccount(
@@ -310,7 +342,7 @@ export class UserResolver {
     try {
       var UserIsSuperAdmin = await user.findOne({
         _id: req.session.userId,
-        role: role.superAdmin,
+        role: [role.superAdmin],
       });
       if (!UserIsSuperAdmin) {
         return {
@@ -357,7 +389,7 @@ export class UserResolver {
         email: email,
         password: hashedPassword,
         username: username,
-        role: role.admin,
+        role: [role.admin],
       });
       NewUser = await NewUser.save();
       console.log("register new user admin successful");
@@ -374,6 +406,23 @@ export class UserResolver {
         code: CodeError.internal_server_error,
         success: false,
         message: "Internal server error" + err.message,
+      };
+    }
+  }
+  // add role for user
+  @Mutation(() => UserMutationResponse)
+  async addRoleForUser(
+    @Arg("addRoleForUserInput", (type) => role) addRoleForUserInput: role,
+    @Ctx() { req, res }: Context
+  ): Promise<UserMutationResponse> {
+    try {
+      // đang nghĩ cách làm 
+    } catch (err) {
+      console.log(err);
+      return {
+        code: CodeError.internal_server_error,
+        success: false,
+        message: "Internal server error " + err.message,
       };
     }
   }

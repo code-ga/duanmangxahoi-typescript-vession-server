@@ -32,6 +32,7 @@ import {
 } from "../util/checkRole";
 import { likeModel } from "../model/LikeModel";
 import { LikeModelType } from "../types/likeTypeModel";
+import { emojiType } from '../types/EmojiType';
 
 registerEnumType(LikeType, {
   name: "LikeType",
@@ -539,7 +540,14 @@ export class PostResolver {
   async likePost(
     @Arg("id") PostId: string,
     @Arg("likeType") likeType: LikeType,
-    @Ctx() { req : {session:{userId}}, res, connection }: Context
+    @Ctx()
+    {
+      req: {
+        session: { userId },
+      },
+      res,
+      connection,
+    }: Context
   ): Promise<UpdatePostMutationResponse> {
     let session = await connection.startSession();
     session.startTransaction();
@@ -575,6 +583,7 @@ export class PostResolver {
       const likeData = await likeModel.findOne({
         userId: userId,
         ObjectId: PostId,
+
       });
       if (likeData) {
         return {
@@ -594,13 +603,15 @@ export class PostResolver {
         ObjectId: PostId,
         value: likeType,
         type: LikeModelType.post,
+        emoji: likeType === LikeType.like ? emojiType.happy : emojiType.sad,
       });
       await like.save();
       const post = await postModel.findOneAndUpdate(
         { _id: PostId },
         {
           likes: [...postData.likes, like._id],
-        })
+        }
+      );
       user.findOneAndUpdate(
         { _id: userId },
         {
@@ -611,10 +622,9 @@ export class PostResolver {
       return {
         code: CodeError.like_post_success,
         message: "Like post successfully",
-        post : await postModel.find({_id: PostId}),
+        post: await postModel.find({ _id: PostId }),
         success: true,
       };
-
     } catch (error) {
       await session.abortTransaction();
       console.log(error);
