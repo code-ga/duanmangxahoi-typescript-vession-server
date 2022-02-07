@@ -1,6 +1,6 @@
 import { CreateCommentInput } from "../types/CreateCommentInput";
 import { Arg, Resolver, Mutation, UseMiddleware, Ctx } from "type-graphql";
-import { CommentMutationResponse } from "./../types/CommentMutaionResponse";
+import { CommentMutationResponse } from "../types/CommentMutationResponse";
 import { CodeError } from "../types/codeError";
 import { CommentModel } from "../model/comment";
 import { IsAuthorized } from "./../middleware/checkAuth";
@@ -60,7 +60,7 @@ export class CommentResolver {
   @UseMiddleware(IsAuthorized)
   async getComment(
     @Arg("postId") postId: string,
-    @Ctx() { req }: Context
+    // @Ctx() { req }: Context
   ): Promise<CommentMutationResponse> {
     try {
       const CommentReturn = await CommentModel.find({ postId });
@@ -84,7 +84,7 @@ export class CommentResolver {
   @UseMiddleware(IsAuthorized)
   async updateComment(
     @Arg("data") data: CreateCommentInput,
-    @Ctx() { req }: Context,
+    // @Ctx()context: Context,
     @Arg("commentId") commentId: string
   ): Promise<CommentMutationResponse> {
     try {
@@ -115,7 +115,7 @@ export class CommentResolver {
           ],
         };
       }
-      const CommentUpdate = await CommentModel.findOneAndUpdate(
+       await CommentModel.findOneAndUpdate(
         { _id: commentId },
         { content }
       );
@@ -140,10 +140,10 @@ export class CommentResolver {
   @UseMiddleware(IsAuthorized)
   async deleteComment(
     @Arg("commentId") commentId: string,
-    @Ctx() { req }: Context
+    // @Ctx() { req }: Context
   ): Promise<CommentMutationResponse> {
     try {
-      let thatComment = await CommentModel.findOne({ _id: commentId });
+      const thatComment = await CommentModel.findOne({ _id: commentId });
       if (!thatComment) {
         return {
           code: CodeError.comment_not_found,
@@ -157,7 +157,7 @@ export class CommentResolver {
           ],
         };
       }
-      const CommentDelete = await CommentModel.findOneAndDelete({
+       await CommentModel.findOneAndDelete({
         _id: commentId,
       });
       const CommentReturn = await CommentModel.find({
