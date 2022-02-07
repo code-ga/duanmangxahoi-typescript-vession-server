@@ -50,4 +50,7 @@ export enum CodeError {
   old_password_not_valid = 246,
   new_password_not_valid = 247,
   change_password_success = 248,
+  add_role_for_user_success = 249,
+  remove_role_for_user_success = 250,
+  get_category_success = 251,
 }

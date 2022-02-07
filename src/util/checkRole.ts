@@ -1,19 +1,19 @@
 import { role } from "../types/RoleEnum";
 
 export const checkRoleCanDeletePost = (roleUser: string[]): boolean => {
-  const roleCanDeletePost = [role.admin, role.superAdmin];
+  const roleCanDeletePost = [role.admin, role.superAdmin, role.contentAdmin];
   return roleCanDeletePost.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanEditPost = (roleUser: string[]): boolean => {
-  const roleCanEditPost = [role.admin, role.superAdmin];
+  const roleCanEditPost = [role.admin, role.superAdmin, role.contentAdmin];
   return roleCanEditPost.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanDeleteComment = (roleUser: string[]): boolean => {
-  const roleCanDeleteComment = [role.admin, role.superAdmin];
+  const roleCanDeleteComment = [role.admin, role.superAdmin, role.contentAdmin];
   return roleCanDeleteComment.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanEditComment = (roleUser: string[]): boolean => {
-  const roleCanEditComment = [role.admin, role.superAdmin];
+  const roleCanEditComment = [role.admin, role.superAdmin , role.contentAdmin];
   return roleCanEditComment.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanDeleteUser = (roleUser: string[]): boolean => {
@@ -25,14 +25,14 @@ export const checkRoleCanEditUser = (roleUser: string[]): boolean => {
   return roleCanEditUser.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanCreateAlertPost = (roleUser: string[]): boolean => {
-  const roleCanCreateAlertPost = [role.superAdmin, role.admin];
+  const roleCanCreateAlertPost = [role.superAdmin, role.admin, role.contentAdmin];
   return roleCanCreateAlertPost.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanUpdateAlertPost = (roleUser: string[]): boolean => {
-  const roleCanUpdateAlertPost = [role.superAdmin, role.admin];
+  const roleCanUpdateAlertPost = [role.superAdmin, role.admin, role.contentAdmin];
   return roleCanUpdateAlertPost.some((role) => roleUser.includes(role));
 };
 export const checkRoleCanDeleteAlertPost = (roleUser: string[]): boolean => {
-  const roleCanDeleteAlertPost = [role.superAdmin, role.admin];
+  const roleCanDeleteAlertPost = [role.superAdmin, role.admin , role.contentAdmin];
   return roleCanDeleteAlertPost.some((role) => roleUser.includes(role));
 };

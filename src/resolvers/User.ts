@@ -1,37 +1,37 @@
-import { user } from "../model/user";
-import { Mutation, Resolver, Arg, Ctx } from "type-graphql";
-import bcrypt from "bcrypt";
-import { UserMutationResponse } from "./../types/userMutationResponse";
-import { resisterInput } from "../types/RegisterInput";
-import { CodeError } from "../types/codeError";
-import { ValidationResisterInput } from "../util/ValidationResisterInput";
-import { LoginInput } from "./../types/LoginInput";
-import { Context } from "../types/Context";
-import { COOKIE_NAME } from "../constraint";
-import { role } from "../types/RoleEnum";
-import { registerEnumType } from "type-graphql";
-import { ChangePasswordInputType } from "./../types/changePasswordInputType";
-import { ValidationChangePasswordInput } from "src/util/validationPasswordInput";
+import {user} from '../model/user'
+import {Mutation, Resolver, Arg, Ctx} from 'type-graphql'
+import bcrypt from 'bcrypt'
+import {UserMutationResponse} from './../types/userMutationResponse'
+import {resisterInput} from '../types/RegisterInput'
+import {CodeError} from '../types/codeError'
+import {ValidationResisterInput} from '../util/ValidationResisterInput'
+import {LoginInput} from './../types/LoginInput'
+import {Context} from '../types/Context'
+import {COOKIE_NAME} from '../constraint'
+import {role} from '../types/RoleEnum'
+import {registerEnumType} from 'type-graphql'
+import {ChangePasswordInputType} from './../types/changePasswordInputType'
+import {ValidationChangePasswordInput} from '../util/validationPasswordInput'
+import {AddRoleForUserInput} from './../types/addRoleForUserInput'
 registerEnumType(role, {
-  name: "role", // this one is mandatory
-  description: "the role enum", // this one is optional
-});
-
+  name: 'role', // this one is mandatory
+  description: 'the role enum', // this one is optional
+})
 @Resolver()
 export class UserResolver {
   @Mutation(() => UserMutationResponse)
   async register(
-    @Arg("RegisterInput") ResisterInput: resisterInput,
-    @Ctx() { req, res }: Context
+    @Arg('RegisterInput') ResisterInput: resisterInput,
+    @Ctx() {req}: Context,
   ): Promise<UserMutationResponse> {
-    var errorDataInput = ValidationResisterInput(ResisterInput);
+    const errorDataInput = ValidationResisterInput(ResisterInput)
     if (errorDataInput) {
-      return errorDataInput;
+      return errorDataInput
     }
     try {
-      const { email, password, username } = ResisterInput;
+      const {email, password, username} = ResisterInput
       const exiting =
-        (await user.findOne({ email })) || (await user.findOne({ username }));
+        (await user.findOne({email})) || (await user.findOne({username}))
       if (exiting) {
         return {
           code:
@@ -40,330 +40,345 @@ export class UserResolver {
               : CodeError.email_already_exists,
           success: false,
           message: `${
-            exiting.username === username ? "username" : "email"
+            exiting.username === username ? 'username' : 'email'
           } are ready exiting`,
           error: [
             {
-              field: exiting.username === username ? "username" : "email",
+              field: exiting.username === username ? 'username' : 'email',
               message: `have two ${
-                exiting.username === username ? "username" : "email"
+                exiting.username === username ? 'username' : 'email'
               } in database`,
             },
           ],
-        };
+        }
       }
-      const hashedPassword = await bcrypt.hash(password, 4);
+      const hashedPassword = await bcrypt.hash(password, 4)
       let NewUser = new user({
         email: email,
         password: hashedPassword,
         username: username,
         role: [role.user],
-      });
-      NewUser = await NewUser.save();
-      req.session.userId = NewUser._id;
-      console.log("register new user successful");
+      })
+      NewUser = await NewUser.save()
+      req.session.userId = NewUser._id
+      console.log('register new user successful')
       return {
         code: CodeError.successFully_registered,
         success: true,
         user: NewUser,
         message:
-          "happy ! user register is successful . now you can use this app",
-      };
+          'happy ! user register is successful . now you can use this app',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error" + err.message,
-      };
+        message: 'Internal server error' + err.message,
+      }
     }
   }
   @Mutation(() => UserMutationResponse)
   async login(
-    @Arg("loginInput") loginInput: LoginInput,
-    @Ctx() { req, res }: Context
+    @Arg('loginInput') loginInput: LoginInput,
+    @Ctx() {req}: Context,
   ): Promise<UserMutationResponse> {
     try {
-      const { usernameOrEmail, password } = loginInput;
+      const {usernameOrEmail, password} = loginInput
       const userData =
-        (await user.findOne({ email: usernameOrEmail })) ||
-        (await user.findOne({ username: usernameOrEmail }));
+        (await user.findOne({email: usernameOrEmail})) ||
+        (await user.findOne({username: usernameOrEmail}))
       if (!userData) {
-        return process.env.NODE_ENV !== "development"
+        return process.env.NODE_ENV !== 'development'
           ? {
               code: CodeError.Incorrect_User_or_Password,
               success: false,
-              message: "Incorrect username email or password",
+              message: 'Incorrect username email or password',
               error: [
                 {
-                  field: "Username Or Email Or Password",
-                  message: "Incorrect username email or password",
+                  field: 'Username Or Email Or Password',
+                  message: 'Incorrect username email or password',
                 },
               ],
             }
           : {
               code: CodeError.user_not_found,
               success: false,
-              message: "user not found",
+              message: 'user not found',
               error: [
                 {
-                  field: "usernameOrEmail",
-                  message: "user not found",
+                  field: 'usernameOrEmail',
+                  message: 'user not found',
                 },
               ],
-            };
+            }
       }
-      const isPasswordValid = await bcrypt.compare(password, userData.password);
+      const isPasswordValid = await bcrypt.compare(password, userData.password)
       if (!isPasswordValid) {
-        return process.env.NODE_ENV !== "development"
+        return process.env.NODE_ENV !== 'development'
           ? {
               code: CodeError.Incorrect_User_or_Password,
               success: false,
-              message: "Incorrect username email or password",
+              message: 'Incorrect username email or password',
               error: [
                 {
-                  field: "Username Or Email Or Password",
-                  message: "Incorrect username email or password",
+                  field: 'Username Or Email Or Password',
+                  message: 'Incorrect username email or password',
                 },
               ],
             }
           : {
               code: CodeError.invalid_password,
               success: false,
-              message: "invalid password",
+              message: 'invalid password',
               error: [
                 {
-                  field: "password",
-                  message: "invalid password",
+                  field: 'password',
+                  message: 'invalid password',
                 },
               ],
-            };
+            }
       }
 
-      req.session.userId = userData._id;
-      console.log("user login successful");
+      req.session.userId = userData._id
+      console.log('user login successful')
 
       return {
         code: CodeError.successFully_logged_in,
         success: true,
         user: userData,
-        message: "happy ! you are logged in",
-      };
+        message: 'happy ! you are logged in',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error " + err.message,
-      };
+        message: 'Internal server error ' + err.message,
+      }
     }
   }
   @Mutation(() => Boolean)
-  logout(@Ctx() { req, res }: Context): Promise<Boolean> {
+  logout(@Ctx() {req, res}: Context): Promise<boolean> {
     try {
       return new Promise((resolve, reject) => {
         req.session.destroy((err) => {
           if (err) {
-            reject(err);
+            reject(err)
           }
-          res.clearCookie(COOKIE_NAME);
-          resolve(true);
-          console.log("user logout successful");
-        });
-      });
+          res.clearCookie(COOKIE_NAME)
+          resolve(true)
+          console.log('user logout successful')
+        })
+      })
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return new Promise((resolve, reject) => {
-        reject(false);
-      });
+        reject(false)
+      })
     }
   }
   @Mutation(() => UserMutationResponse)
-  async getUser(@Ctx() { req }: Context): Promise<UserMutationResponse> {
+  async getUser(@Ctx() {req}: Context): Promise<UserMutationResponse> {
     try {
-      const userData = await user.findById(req.session.userId);
+      const userData = await user.findById(req.session.userId)
       if (!userData) {
         return {
           code: CodeError.user_not_found,
           success: false,
-          message: "user not found",
+          message: 'user not found',
           error: [
             {
-              field: "userId",
-              message: "user not found",
+              field: 'userId',
+              message: 'user not found',
             },
           ],
-        };
+        }
       }
-      console.log("get user successful");
+      console.log('get user successful')
       return {
         code: CodeError.successFully_get_user,
         success: true,
         user: userData,
-        message: "happy ! you are get user",
-      };
+        message: 'happy ! you are get user',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error " + err.message,
-      };
+        message: 'Internal server error ' + err.message,
+      }
     }
   }
   @Mutation(() => UserMutationResponse)
   async getAuthorInfo(
-    @Arg("authorId") authorId: string,
-    @Ctx() { req }: Context
+    @Arg('authorId') authorId: string,
+    // @Ctx() {}: Context,
   ): Promise<UserMutationResponse> {
     try {
-      let userData = await user.findById(authorId);
+      const userData = await user.findById(authorId)
       if (!userData) {
         return {
           code: CodeError.user_not_found,
           success: false,
-          message: "author not found",
+          message: 'author not found',
           error: [
             {
-              field: "userId",
-              message: "author not found",
+              field: 'userId',
+              message: 'author not found',
             },
           ],
-        };
+        }
       }
       // console.log(userData);
       return {
         code: CodeError.successFully_get_user,
         success: true,
         user: userData,
-        message: "happy ! you are get user author info",
-      };
+        message: 'happy ! you are get user author info',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error " + err.message,
-      };
+        message: 'Internal server error ' + err.message,
+      }
     }
   }
   // get my profile
   @Mutation(() => UserMutationResponse)
-  async getMyProfile(@Ctx() { req }: Context): Promise<UserMutationResponse> {
+  async getMyProfile(@Ctx() {req}: Context): Promise<UserMutationResponse> {
     try {
-      let userData = await user.findById(req.session.userId);
+      const userData = await user.findById(req.session.userId)
       if (!userData) {
         return {
           code: CodeError.user_not_found,
           success: false,
-          message: "user not found",
+          message: 'user not found',
           error: [
             {
-              field: "userId",
-              message: "user not found",
+              field: 'userId',
+              message: 'user not found',
             },
           ],
-        };
+        }
       }
-      console.log("get my profile successful");
+      console.log('get my profile successful')
       return {
         code: CodeError.successFully_get_user,
         success: true,
         user: userData,
-        message: "happy ! you are get my profile",
-      };
+        message: 'happy ! you are get my profile',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error " + err.message,
-      };
+        message: 'Internal server error ' + err.message,
+      }
     }
   }
   // change password user
   @Mutation(() => UserMutationResponse)
   async changePasswordUser(
-    @Arg("changePasswordInput") changePasswordInput: ChangePasswordInputType,
-    @Ctx() { req }: Context
+    @Arg('changePasswordInput') changePasswordInput: ChangePasswordInputType,
+    @Ctx() {req}: Context,
   ): Promise<UserMutationResponse> {
     try {
-      let userData = await user.findById(req.session.userId);
+      const userData = await user.findById(req.session.userId)
       if (!userData) {
         return {
           code: CodeError.user_not_found,
           success: false,
-          message: "user not found",
+          message: 'user not found',
           error: [
             {
-              field: "userId",
-              message: "user not found",
+              field: 'userId',
+              message: 'user not found',
             },
           ],
-        };
+        }
       }
       const errorDataInput = await ValidationChangePasswordInput(
         changePasswordInput,
-        userData.password
-      );
+        userData.password,
+      )
       if (errorDataInput) {
-        return errorDataInput;
+        return errorDataInput
       }
       const hashedPassword = await bcrypt.hash(
         changePasswordInput.newPassword,
-        4
-      );
-      await user.findOneAndUpdate(
-        { _id: req.session.userId },
-        { password: hashedPassword }
-      );
-      console.log("change password successful");
+        4,
+      )
+       await user.findOneAndUpdate(
+        {_id: req.session.userId},
+        {password: hashedPassword},
+        {new: true},
+      )
+      console.log('change password successful')
       return {
         code: CodeError.change_password_success,
         success: true,
-        message: "happy ! you are change password",
-      };
+        message: 'happy ! you are change password',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error " + err.message,
-      };
+        message: 'Internal server error ' + err.message,
+      }
     }
   }
   // admin User everyone must to write admin in here
   // create admin user
   @Mutation(() => UserMutationResponse)
-  async createAdminAccount(
-    @Arg("RegisterInput") ResisterInput: resisterInput,
-    @Ctx() { req, res }: Context
+  async createAccountHaveRole(
+    @Arg('RegisterInput') ResisterInput: resisterInput,
+    @Arg('role') UserRole: role,
+    @Ctx() {req}: Context,
   ): Promise<UserMutationResponse> {
     try {
-      var UserIsSuperAdmin = await user.findOne({
+      const UserIsSuperAdmin = await user.findOne({
         _id: req.session.userId,
-        role: [role.superAdmin],
-      });
+        role: role.superAdmin,
+      })
       if (!UserIsSuperAdmin) {
         return {
           code: CodeError.access_denied,
           success: false,
-          message: "access denied",
+          message: 'access denied',
           error: [
             {
-              field: "userId",
-              message: "access denied",
+              field: 'userId',
+              message: 'access denied',
             },
           ],
-        };
+        }
       }
-      var errorDataInput = ValidationResisterInput(ResisterInput);
+      if (UserRole === role.superAdmin) {
+        return {
+          code: CodeError.access_denied,
+          success: false,
+          message: 'access denied',
+          error: [
+            {
+              field: 'userId',
+              message: 'access denied',
+            },
+          ],
+        }
+      }
+      const errorDataInput = ValidationResisterInput(ResisterInput)
       if (errorDataInput) {
-        return errorDataInput;
+        return errorDataInput
       }
-      const { email, password, username } = ResisterInput;
+      const {email, password, username} = ResisterInput
       const exiting =
-        (await user.findOne({ email })) || (await user.findOne({ username }));
+        (await user.findOne({email})) || (await user.findOne({username}))
       if (exiting) {
         return {
           code:
@@ -372,58 +387,154 @@ export class UserResolver {
               : CodeError.email_already_exists,
           success: false,
           message: `${
-            exiting.username === username ? "username" : "email"
+            exiting.username === username ? 'username' : 'email'
           } are ready exiting`,
           error: [
             {
-              field: exiting.username === username ? "username" : "email",
+              field: exiting.username === username ? 'username' : 'email',
               message: `have two ${
-                exiting.username === username ? "username" : "email"
+                exiting.username === username ? 'username' : 'email'
               } in database`,
             },
           ],
-        };
+        }
       }
-      const hashedPassword = await bcrypt.hash(password, 4);
+      const hashedPassword = await bcrypt.hash(password, 4)
       let NewUser = new user({
         email: email,
         password: hashedPassword,
         username: username,
-        role: [role.admin],
-      });
-      NewUser = await NewUser.save();
-      console.log("register new user admin successful");
+        role: [UserRole],
+      })
+      NewUser = await NewUser.save()
+      console.log('register new user admin successful')
       return {
         code: CodeError.create_admin_account_success,
         success: true,
         user: NewUser,
         message:
-          "happy ! user register is successful . now you can use this app",
-      };
+          'happy ! user register is successful . now you can use this app',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error" + err.message,
-      };
+        message: 'Internal server error' + err.message,
+      }
     }
   }
   // add role for user
   @Mutation(() => UserMutationResponse)
   async addRoleForUser(
-    @Arg("addRoleForUserInput", (type) => role) addRoleForUserInput: role,
-    @Ctx() { req, res }: Context
+    @Arg('addRoleForUserInput') addRoleForUserInput: AddRoleForUserInput,
+    @Ctx() {req}: Context,
   ): Promise<UserMutationResponse> {
     try {
-      // đang nghĩ cách làm 
+      const UserIsSuperAdmin = await user.findOne({
+        _id: req.session.userId,
+        role: role.superAdmin,
+      })
+      if (!UserIsSuperAdmin) {
+        return {
+          code: CodeError.access_denied,
+          success: false,
+          message: 'access denied',
+          error: [
+            {
+              field: 'userId',
+              message: 'access denied',
+            },
+          ],
+        }
+      }
+      const userData = await user.findOne({_id: addRoleForUserInput.userId})
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          success: false,
+          message: 'user not found',
+          error: [
+            {
+              field: 'userId',
+              message: 'user not found',
+            },
+          ],
+        }
+      }
+      await user.findOneAndUpdate(
+        {_id: addRoleForUserInput.userId},
+        {$push: {role: addRoleForUserInput.role}},
+      )
+      console.log('add role for user successful')
+      return {
+        code: CodeError.add_role_for_user_success,
+        success: true,
+        message: 'happy ! you are add role for user',
+      }
     } catch (err) {
-      console.log(err);
+      console.log(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
-        message: "Internal server error " + err.message,
-      };
+        message: 'Internal server error ' + err.message,
+      }
+    }
+  }
+  @Mutation(() => UserMutationResponse)
+  async removeRoleForUser(
+    @Arg('removeRoleForUserInput') removeRoleForUserInput: AddRoleForUserInput, // vì input của hai cái này nó giống nhau
+    @Ctx() {req}: Context,
+  ): Promise<UserMutationResponse> {
+    try {
+      const UserIsSuperAdmin = await user.findOne({
+        _id: req.session.userId,
+        role: role.superAdmin,
+      })
+      if (!UserIsSuperAdmin) {
+        return {
+          code: CodeError.access_denied,
+          success: false,
+          message: 'access denied',
+          error: [
+            {
+              field: 'userId',
+              message: 'access denied',
+            },
+          ],
+        }
+      }
+      const userData = await user.findOne({_id: removeRoleForUserInput.userId})
+      if (!userData) {
+        return {
+          code: CodeError.user_not_found,
+          success: false,
+          message: 'user not found',
+          error: [
+            {
+              field: 'userId',
+              message: 'user not found',
+            },
+          ],
+        }
+      }
+      await user.findOneAndUpdate(
+        {_id: removeRoleForUserInput.userId},
+        {$pull: {role: removeRoleForUserInput.role}},
+      )
+      console.log('remove role for user successful')
+      return {
+        code: CodeError.remove_role_for_user_success,
+        success: true,
+        message: 'happy ! you are remove role for user',
+      }
+    } catch (err) {
+      console.log(err)
+      return {
+        code: CodeError.internal_server_error,
+        success: false,
+        message: 'Internal server error ' + err.message,
+      }
     }
   }
 }

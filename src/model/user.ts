@@ -34,20 +34,7 @@ class User {
   @Field()
   @prop()
   updatedAt: Date;
-  // friend field
-  // @Field((_type) => [String], { nullable: true })
-  // @prop({
-  //   ref: () => User,
-  //   default: [],
-  // })
-  // public friend: Ref<User>[];
-  // @Field((_type) => [String], { nullable: true })
-  // @prop({
-  //   ref: () => User,
-  //   default: [],
-  // })
-  // public friendRequest: Ref<User>[];
-  // admin field
+  // role field
   @Field((_type) =>role, { nullable: true })
   @prop( { default: false })
   public role: role[];

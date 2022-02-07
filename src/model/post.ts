@@ -9,10 +9,7 @@ import { Field, ObjectType } from "type-graphql";
 import user from "./user";
 import Comment from "./comment";
 import LikeModel from "./LikeModel";
-// import * as autopopulate from "mongoose-autopopulate";
-// import VoteModel from './VoteModel';
-// TODO : REMOVE AUTOPOPULATE
-
+import { Category } from './Category';
 @ObjectType()
 @ModelOptions({ schemaOptions: { timestamps: true } })
 export class Post {
@@ -55,7 +52,7 @@ export class Post {
   public _id: string;
 
   @Field()
-  @Property({ required: true, default: defaultCategory })
+  @Property({ required: true, default: defaultCategory , ref: Category })
   public category: string;
 
   @Field()
