@@ -2,7 +2,7 @@ import { CreateCommentInput } from "../types/CreateCommentInput";
 import { Arg, Resolver, Mutation, UseMiddleware, Ctx } from "type-graphql";
 import { CommentMutationResponse } from "./../types/CommentMutaionResponse";
 import { CodeError } from "../types/codeError";
-import { CommentModel } from "../model/Comment";
+import { CommentModel } from "../model/comment";
 import { IsAuthorized } from "./../middleware/checkAuth";
 import { Context } from "../types/Context";
 import { postModel } from "./../model/post";
