@@ -32,8 +32,8 @@
   },
   "scripts": {
     "serve": "nodemon src/index.ts",
-    "start": "ts-node src/index.ts",
-    "dev" :"nodemon src/index.ts"
+    "start": "cd src && ts-node index.ts",
+    "dev": "nodemon src/index.ts"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.10.1",
