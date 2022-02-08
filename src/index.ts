@@ -48,7 +48,6 @@ const main = async () => {
   apolloServer.applyMiddleware({app, cors: false})
   // disable x-powered-by header
   app.disable('x-powered-by')
-  console.log(app.disabled('x-powered-by'))
   const HttpServer = createServer(app)
   const port = process.env.PORT || 4000
 
@@ -66,7 +65,7 @@ const main = async () => {
     if (hostName === '::') {
       hostName = 'localhost'
     }
-    console.log(process.env.HEROKU_APP_NAME)
+    console.log(process.env)
     console.log(
       `Server is running on port ${port} and graphgl path http://${hostName}:${port}${apolloServer.graphqlPath}`,
     )
