@@ -24,13 +24,13 @@ export class Post {
   public content: string;
   // author field
 
-  @Field((_type) => String)
+  @Field(() => String)
   @Property({
     ref: () => user,
   })
   public author: Ref<user>;
   // image field
-  @Field((_type) => [String])
+  @Field(() => [String])
   @Property({ required: true, default: []})
   public photo: string[];
 
@@ -69,7 +69,7 @@ export class Post {
   public isAlert: boolean;
   
   // like field
-  @Field((_type) => [String])
+  @Field(() => [String])
   @Property({ default: [], required: true, ref: () => LikeModel })
   public likes: string[];
 

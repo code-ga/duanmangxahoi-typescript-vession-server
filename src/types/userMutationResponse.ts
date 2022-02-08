@@ -10,6 +10,6 @@ export class UserMutationResponse implements IMutationResponse {
   message?: string;
   @Field({ nullable: true })
   user?: User;
-  @Field((_type) => [FieldError], {nullable:true})
+  @Field(() => [FieldError], {nullable:true})
   error?: FieldError[];
 }

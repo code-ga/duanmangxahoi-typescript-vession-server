@@ -53,13 +53,15 @@ export class UserResolver {
         }
       }
       const hashedPassword = await bcrypt.hash(password, 4)
-      let NewUser = new user({
+      const NewUser = new user({
         email: email,
         password: hashedPassword,
         username: username,
         role: [role.user],
+        likes : [],
       })
-      NewUser = await NewUser.save()
+      await NewUser.save()
+      console.log(NewUser)
       req.session.userId = NewUser._id
       console.log('register new user successful')
       return {

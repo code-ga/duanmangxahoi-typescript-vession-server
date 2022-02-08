@@ -46,23 +46,27 @@ const main = async () => {
   })
   await apolloServer.start()
   apolloServer.applyMiddleware({app, cors: false})
+  // disable x-powered-by header
+  app.disable('x-powered-by')
+  console.log(app.disabled('x-powered-by'))
   const HttpServer = createServer(app)
   const port = process.env.PORT || 4000
+
   HttpServer.listen(port, () => {
     // get host name and port
-    let hostName = HttpServer.address();
+    let hostName = HttpServer.address()
     if (!hostName) {
       throw new Error('Host name is not found')
     }
 
-    if (typeof hostName === "object"){
+    if (typeof hostName === 'object') {
       hostName = hostName.address
     }
 
-    if (hostName === "::") {
-      hostName = "localhost"
+    if (hostName === '::') {
+      hostName = 'localhost'
     }
-
+    console.log(process.env.HEROKU_APP_NAME)
     console.log(
       `Server is running on port ${port} and graphgl path http://${hostName}:${port}${apolloServer.graphqlPath}`,
     )
