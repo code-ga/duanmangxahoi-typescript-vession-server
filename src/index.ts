@@ -65,9 +65,13 @@ const main = async () => {
     if (hostName === '::') {
       hostName = 'localhost'
     }
-    console.log(process.env)
+    // console.log(process.env.HEROKU_APP_NAME)
     console.log(
-      `Server is running on port ${port} and graphgl path http://${hostName}:${port}${apolloServer.graphqlPath}`,
+      `Server is running on port ${port} and graphgl path http://${
+        process.env.NODE_ENV !== 'production'
+          ? hostName
+          : process.env.HEROKU_APP_NAME
+      }:${port}${apolloServer.graphqlPath}`,
     )
   })
 }
