@@ -70,7 +70,7 @@ const main = async () => {
       `Server is running on port ${port} and graphgl path http://${
         process.env.NODE_ENV !== 'production'
           ? hostName
-          : process.env.HEROKU_APP_NAME
+          : process.env.HEROKU_APP_NAME + '.herokuapp.com'
       }:${port}${apolloServer.graphqlPath}`,
     )
   })
