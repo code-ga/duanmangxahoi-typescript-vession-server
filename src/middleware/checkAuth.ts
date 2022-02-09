@@ -1,14 +1,12 @@
-import { Context } from "../types/Context";
-import { MiddlewareFn, Authorized } from "type-graphql";
+import {Context} from '../types/Context'
+import {MiddlewareFn, Authorized} from 'type-graphql'
 
-export const IsAuthorized: MiddlewareFn<Context> = async (
-  { root, args, context, info },
-  next
-) => {
-  const userId = context.req.session.userId;
+export const IsAuthorized: MiddlewareFn<Context> = async (data, next) => {
+  const userId = data.context.req.session.userId
+  console.log(userId)
   if (!userId) {
-    throw Authorized("You are not authorized");
+    throw Authorized('You are not authorized')
   } else {
-    await next();
+    await next()
   }
-};
+}

@@ -58,12 +58,12 @@ export class UserResolver {
         password: hashedPassword,
         username: username,
         role: [role.user],
-        likes : [],
+        likes: [],
       })
       await NewUser.save()
       console.log(NewUser)
       req.session.userId = NewUser._id
-      console.log('register new user successful')
+      console.log(`register new user successful with id is ${NewUser._id}`)
       return {
         code: CodeError.successFully_registered,
         success: true,
@@ -72,7 +72,7 @@ export class UserResolver {
           'happy ! user register is successful . now you can use this app',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -143,7 +143,7 @@ export class UserResolver {
       }
 
       req.session.userId = userData._id
-      console.log('user login successful')
+      console.log(`user login successful with id is ${userData._id}`)
 
       return {
         code: CodeError.successFully_logged_in,
@@ -152,7 +152,7 @@ export class UserResolver {
         message: 'happy ! you are logged in',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -164,17 +164,18 @@ export class UserResolver {
   logout(@Ctx() {req, res}: Context): Promise<boolean> {
     try {
       return new Promise((resolve, reject) => {
+        const ThisUserId = req.session.userId
         req.session.destroy((err) => {
           if (err) {
             reject(err)
           }
           res.clearCookie(COOKIE_NAME)
           resolve(true)
-          console.log('user logout successful')
+          console.log(`user logout successful with id is ${ThisUserId}`)
         })
       })
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return new Promise((resolve, reject) => {
         reject(false)
       })
@@ -197,7 +198,7 @@ export class UserResolver {
           ],
         }
       }
-      console.log('get user successful')
+      console.log(`get user successful with user id is ${userData._id}`)
       return {
         code: CodeError.successFully_get_user,
         success: true,
@@ -205,7 +206,7 @@ export class UserResolver {
         message: 'happy ! you are get user',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -233,7 +234,7 @@ export class UserResolver {
           ],
         }
       }
-      // console.log(userData);
+      console.log(`get author successful with user id is ${userData._id}`)
       return {
         code: CodeError.successFully_get_user,
         success: true,
@@ -241,7 +242,7 @@ export class UserResolver {
         message: 'happy ! you are get user author info',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -267,7 +268,7 @@ export class UserResolver {
           ],
         }
       }
-      console.log('get my profile successful')
+      console.log(`get user successful with user id is ${userData._id}`)
       return {
         code: CodeError.successFully_get_user,
         success: true,
@@ -275,7 +276,7 @@ export class UserResolver {
         message: 'happy ! you are get my profile',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -315,19 +316,19 @@ export class UserResolver {
         changePasswordInput.newPassword,
         4,
       )
-       await user.findOneAndUpdate(
+      await user.findOneAndUpdate(
         {_id: req.session.userId},
         {password: hashedPassword},
         {new: true},
       )
-      console.log('change password successful')
+      console.log(`change password successful with user id is ${userData._id}`)
       return {
         code: CodeError.change_password_success,
         success: true,
         message: 'happy ! you are change password',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -409,7 +410,7 @@ export class UserResolver {
         role: [UserRole],
       })
       NewUser = await NewUser.save()
-      console.log('register new user admin successful')
+      console.log(`create admin user successful with user id is ${NewUser._id}`)
       return {
         code: CodeError.create_admin_account_success,
         success: true,
@@ -418,7 +419,7 @@ export class UserResolver {
           'happy ! user register is successful . now you can use this app',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -468,14 +469,14 @@ export class UserResolver {
         {_id: addRoleForUserInput.userId},
         {$push: {role: addRoleForUserInput.role}},
       )
-      console.log('add role for user successful')
+      console.log(`add role for user successful with user id is ${userData._id}`)
       return {
         code: CodeError.add_role_for_user_success,
         success: true,
         message: 'happy ! you are add role for user',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,
@@ -524,14 +525,14 @@ export class UserResolver {
         {_id: removeRoleForUserInput.userId},
         {$pull: {role: removeRoleForUserInput.role}},
       )
-      console.log('remove role for user successful')
+      console.log(`remove role for user successful with user id is ${userData._id}`)
       return {
         code: CodeError.remove_role_for_user_success,
         success: true,
         message: 'happy ! you are remove role for user',
       }
     } catch (err) {
-      console.log(err)
+      console.warn(err)
       return {
         code: CodeError.internal_server_error,
         success: false,

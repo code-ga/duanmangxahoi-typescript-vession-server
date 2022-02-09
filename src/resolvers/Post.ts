@@ -79,6 +79,9 @@ export class PostResolver {
         {$push: {posts: newPost._id}},
       )
       const postReturn = await postModel.find({}) //.populate("author");
+      console.log(
+        `User [${req.session.userId}] create post with data: ${postData}`,
+      )
       return {
         code: CodeError.create_post_success,
         message: 'Post created successfully',
@@ -86,7 +89,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -98,6 +101,7 @@ export class PostResolver {
   async getPosts() {
     try {
       const posts = await postModel.find({})
+      console.log(`User [vô danh] get all post`)
       return {
         code: CodeError.get_post_success,
         message: 'Successfully get post',
@@ -105,7 +109,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -129,18 +133,18 @@ export class PostResolver {
             },
           ],
         }
-      } else {
-        await postModel.findOneAndUpdate({_id: id}, {views: postData.views + 1})
-        const postReturn = (await postModel.findById(id)) || undefined
-        return {
-          code: CodeError.get_post_success,
-          message: 'Successfully get post',
-          success: true,
-          post: postReturn,
-        }
+      }
+      await postModel.findOneAndUpdate({_id: id}, {views: postData.views + 1})
+      const postReturn = (await postModel.findById(id)) || undefined
+      console.log(`User [vô danh] get post with id: ${id}`)
+      return {
+        code: CodeError.get_post_success,
+        message: 'Successfully get post',
+        success: true,
+        post: postReturn,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -237,6 +241,7 @@ export class PostResolver {
         }
       }
       const postReturn = await postModel.find({})
+      console.log(`User [${req.session.userId}] update post with id: ${id}`)
       return {
         code: CodeError.update_post_success,
         message: 'Post updated successfully',
@@ -244,7 +249,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -311,6 +316,7 @@ export class PostResolver {
         {$pull: {posts: id}},
       )
       const postReturn = await postModel.find({})
+      console.log(`User [${req.session.userId}] delete post with id: ${id}`)
       return {
         code: CodeError.delete_post_success,
         message: 'Post deleted successfully',
@@ -318,7 +324,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -331,6 +337,7 @@ export class PostResolver {
   async getUserPost(@Ctx() {req}: Context) {
     try {
       const postData = await postModel.find({author: req.session.userId})
+      console.log(`User [${req.session.userId}] get all post`)
       return {
         code: CodeError.get_post_success,
         message: 'Successfully get post',
@@ -338,7 +345,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -407,6 +414,7 @@ export class PostResolver {
         )
       }
       const postReturn = await postModel.find({isAlert: true}) //.populate("author");
+      console.log(`User [${req.session.userId}] create alert post`)
       return {
         code: CodeError.create_post_success,
         message: 'Post created successfully',
@@ -414,7 +422,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -505,6 +513,7 @@ export class PostResolver {
         }
       }
       const postReturn = await postModel.find({isAlert: true})
+      console.log(`User [${req.session.userId}] update alert post`)
       return {
         code: CodeError.update_post_success,
         message: 'Post updated successfully',
@@ -512,7 +521,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -575,6 +584,7 @@ export class PostResolver {
         {name: postData.category},
         {$pull: {posts: id}},
       )
+      console.log(`User [${req.session.userId}] delete alert post`)
       return {
         code: CodeError.delete_post_success,
         message: 'Post deleted successfully',
@@ -582,7 +592,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -595,6 +605,7 @@ export class PostResolver {
   async GetAlertPost() {
     try {
       const postReturn = await postModel.find({isAlert: true})
+      console.log(`User [vô danh] get alert post`)
       return {
         code: CodeError.get_post_success,
         message: 'Post get successfully',
@@ -602,7 +613,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -684,6 +695,7 @@ export class PostResolver {
         {_id: PostId},
         {
           likes: [...postData.likes, like._id],
+          likeNumber: postData.likeNumber + likeType,
         },
         {
           new: true,
@@ -695,7 +707,7 @@ export class PostResolver {
           likes: [...userData.likes, like._id],
         },
       )
-
+        console.log(`User [${userId}] like post`)
       return {
         code: CodeError.like_post_success,
         message: 'Like post successfully',
@@ -704,7 +716,7 @@ export class PostResolver {
       }
     } catch (error) {
       await session.abortTransaction()
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -714,11 +726,13 @@ export class PostResolver {
       await session.endSession()
     }
   }
+
   // get all Category
   @Query(() => CategoryResponse)
   async GetCategory() {
     try {
       const categoryReturn = await CategoryModel.find({})
+      console.log(`User [vô danh] get all category`)
       return {
         code: CodeError.get_category_success,
         message: 'Category get successfully',
@@ -726,7 +740,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,
@@ -741,6 +755,7 @@ export class PostResolver {
       const postReturn = await postModel.find({
         category: category,
       })
+      console.log(`User [vô danh] get all post in category`)
       return {
         code: CodeError.get_post_success,
         message: 'Post get successfully',
@@ -748,7 +763,7 @@ export class PostResolver {
         success: true,
       }
     } catch (error) {
-      console.log(error)
+      console.warn(error)
       return {
         code: CodeError.internal_server_error,
         message: 'Internal Server Error server error is the ' + error.message,

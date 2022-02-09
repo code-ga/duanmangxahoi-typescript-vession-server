@@ -72,7 +72,11 @@ export class Post {
   @Field(() => [String])
   @Property({ default: [], required: true, ref: () => LikeModel })
   public likes: string[];
-
+  
+  // like number
+  @Field()
+  @Property({ default: 0 })
+  public likeNumber: number;
 }
 export default Post;
 export const postModel = getModelForClass(Post);

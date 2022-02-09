@@ -1,3 +1,4 @@
+import { defaultCategory } from "../constraint";
 import { Field, InputType } from "type-graphql";
 
 @InputType()
@@ -6,6 +7,6 @@ export class CreatePostInput {
   title: string;
   @Field()
   content: string;
-  @Field()
-  category: string;
+  @Field({nullable: true , description:`default is ${defaultCategory}`})
+  category?: string;
 }
