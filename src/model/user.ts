@@ -48,6 +48,10 @@ class User {
     default: [],
   })
   likes: string[]
+  // key word field
+  @Field(() => [String], { nullable: true })
+  @prop({ default: [] })
+  keywords: string[]
 }
 export default User
 export const user = getModelForClass(User)

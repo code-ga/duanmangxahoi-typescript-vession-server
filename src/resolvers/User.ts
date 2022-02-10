@@ -1,5 +1,5 @@
 import {user} from '../model/user'
-import {Mutation, Resolver, Arg, Ctx} from 'type-graphql'
+import {Mutation, Resolver, Arg, Ctx , UseMiddleware} from 'type-graphql'
 import bcrypt from 'bcrypt'
 import {UserMutationResponse} from './../types/userMutationResponse'
 import {resisterInput} from '../types/RegisterInput'
@@ -13,6 +13,8 @@ import {registerEnumType} from 'type-graphql'
 import {ChangePasswordInputType} from './../types/changePasswordInputType'
 import {ValidationChangePasswordInput} from '../util/validationPasswordInput'
 import {AddRoleForUserInput} from './../types/addRoleForUserInput'
+import { IsAuthorized } from './../middleware/checkAuth';
+import { generateKeywords } from './../util/keyword';
 registerEnumType(role, {
   name: 'role', // this one is mandatory
   description: 'the role enum', // this one is optional
@@ -59,6 +61,7 @@ export class UserResolver {
         username: username,
         role: [role.user],
         likes: [],
+        keywords : generateKeywords(username)
       })
       await NewUser.save()
       console.log(NewUser)
@@ -182,6 +185,7 @@ export class UserResolver {
     }
   }
   @Mutation(() => UserMutationResponse)
+  @UseMiddleware(IsAuthorized)
   async getUser(@Ctx() {req}: Context): Promise<UserMutationResponse> {
     try {
       const userData = await user.findById(req.session.userId)

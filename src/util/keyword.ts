@@ -4,9 +4,9 @@ export const generateKeywords = (text:string) => {
   const name = text.split(" ").filter((word:string) => word);
 
   const length = name.length;
-  let flagArray: boolean[] = [];
-  let result: any[] = [];
-  let stringArray: string[] = [];
+  const flagArray: boolean[] = [];
+  const result: any[] = [];
+  const stringArray: string[] = [];
 
   /**
    * khoi tao mang flag false
