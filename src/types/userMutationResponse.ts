@@ -1,15 +1,16 @@
-import { Field, ObjectType } from "type-graphql";
-import { IMutationResponse } from "./BaseResponseType";
-import User from "./../model/user";
-import { FieldError } from "./errorField";
+import {Field, ObjectType} from 'type-graphql';
+import {IMutationResponse} from './BaseResponseType';
+import User from './../model/user';
+import {FieldError} from './errorField';
 
-@ObjectType({ implements: IMutationResponse })
+@ObjectType({implements: IMutationResponse})
 export class UserMutationResponse implements IMutationResponse {
-  code: number;
-  success: boolean;
-  message?: string;
-  @Field({ nullable: true })
-  user?: User;
-  @Field(() => [FieldError], {nullable:true})
-  error?: FieldError[];
+	code: number;
+	success: boolean;
+	message?: string;
+	@Field({nullable: true})
+	user?: User;
+	@Field(() => [FieldError], {nullable: true})
+	error?: FieldError[];
 }
+

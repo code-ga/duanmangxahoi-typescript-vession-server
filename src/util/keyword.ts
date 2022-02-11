@@ -1,55 +1,57 @@
-export const generateKeywords = (text:string) => {
-  // liet ke tat cac hoan vi. vd: name = ["David", "Van", "Teo"]
-  // => ["David", "Van", "Teo"], ["David", "Teo", "Van"], ["Teo", "David", "Van"],...
-  const name = text.split(" ").filter((word:string) => word);
+export const generateKeywords = (text: string) => {
+	// liet ke tat cac hoan vi. vd: name = ["David", "Van", "Teo"]
+	// => ["David", "Van", "Teo"], ["David", "Teo", "Van"], ["Teo", "David", "Van"],...
+	const name = text.split(' ').filter((word: string) => word);
 
-  const length = name.length;
-  const flagArray: boolean[] = [];
-  const result: any[] = [];
-  const stringArray: string[] = [];
+	const length = name.length;
+	const flagArray: boolean[] = [];
+	const result: string[] = [];
+	const stringArray: string[] = [];
 
-  /**
-   * khoi tao mang flag false
-   * dung de danh dau xem gia tri
-   * tai vi tri nay da duoc su dung
-   * hay chua
-   **/
-  for (let i = 0; i < length; i++) {
-    flagArray[i] = false;
-  }
+	/**
+	 * khoi tao mang flag false
+	 * dung de danh dau xem gia tri
+	 * tai vi tri nay da duoc su dung
+	 * hay chua
+	 **/
 
-  const createKeywords = (name: string) => {
-    const arrName: string[] = [];
-    let curName = "";
-    name.split("").forEach((letter) => {
-      curName += letter;
-      arrName.push(curName);
-    });
-    return arrName;
-  };
+	for (let i = 0; i < length; i++) {
+		flagArray[i] = false;
+	}
 
-  function findPermutation(k: number) {
-    for (let i = 0; i < length; i++) {
-      if (!flagArray[i]) {
-        flagArray[i] = true;
-        result[k] = name[i];
+	const createKeywords = (name: string) => {
+		const arrName: string[] = [];
+		let curName = '';
+		name.split('').forEach((letter) => {
+			curName += letter;
+			arrName.push(curName);
+		});
+		return arrName;
+	};
 
-        if (k === length - 1) {
-          stringArray.push(result.join(" "));
-        }
+	function findPermutation(k: number) {
+		for (let i = 0; i < length; i++) {
+			if (!flagArray[i]) {
+				flagArray[i] = true;
+				result[k] = name[i];
 
-        findPermutation(k + 1);
-        flagArray[i] = false;
-      }
-    }
-  }
+				if (k === length - 1) {
+					stringArray.push(result.join(' '));
+				}
 
-  findPermutation(0);
+				findPermutation(k + 1);
+				flagArray[i] = false;
+			}
+		}
+	}
 
-    const keywords = stringArray.reduce((acc: any, cur: string) => {
-        const arr = createKeywords(cur);
-        return [...acc, ...arr];
-    }, []);
+	findPermutation(0);
 
-  return keywords;
+  const keywords = stringArray.reduce((acc: any, cur: string) => {
+    console.log(acc, cur);
+		const arr = createKeywords(cur);
+		return [...acc, ...arr];
+	}, []);
+
+	return keywords;
 };

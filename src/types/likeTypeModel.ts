@@ -1,4 +1,4 @@
 export enum LikeModelType {
-    post = "post",
-    comment = "comment",
+	post = 'post',
+	comment = 'comment',
 }

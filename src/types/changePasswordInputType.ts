@@ -1,10 +1,10 @@
-import { Field, InputType } from "type-graphql";
+import {Field, InputType} from 'type-graphql';
 
 @InputType()
 export class ChangePasswordInputType {
-    @Field()
-    oldPassword: string;
+	@Field()
+	oldPassword: string;
 
-    @Field()
-    newPassword: string;
+	@Field()
+	newPassword: string;
 }
