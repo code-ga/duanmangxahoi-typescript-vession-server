@@ -15,7 +15,7 @@ import {COOKIE_NAME} from './constraint';
 import {Context} from './types/Context';
 import {UserResolver} from './resolvers/User';
 import {PostResolver} from './resolvers/Post';
-import {CommentResolver} from './resolvers/Comment';
+import {LogPluginForApolloServer} from './util/logger';
 dotenv.config({path: path.resolve(__dirname, './.env')});
 const main = async () => {
 	const app = express();
@@ -39,10 +39,13 @@ const main = async () => {
 
 	const apolloServer = new ApolloServer({
 		schema: await buildSchema({
-			resolvers: [HelloResolver, UserResolver, PostResolver, CommentResolver],
+			resolvers: [HelloResolver, UserResolver, PostResolver],
 			validate: false,
 		}),
-		plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
+		plugins: [
+			ApolloServerPluginLandingPageGraphQLPlayground(),
+			LogPluginForApolloServer,
+		],
 		context: ({req, res}): Context => ({req, res, connection}),
 	});
 	await apolloServer.start();

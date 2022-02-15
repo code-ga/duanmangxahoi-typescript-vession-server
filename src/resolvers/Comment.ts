@@ -6,7 +6,7 @@ import {CommentModel} from '../model/comment';
 import {IsAuthorized} from './../middleware/checkAuth';
 import {Context} from '../types/Context';
 import {postModel} from './../model/post';
-import {user} from './../model/user';
+import {userModel} from './../model/user';
 @Resolver()
 export class CommentResolver {
 	@Mutation(() => CommentMutationResponse)
@@ -119,7 +119,7 @@ export class CommentResolver {
 					],
 				};
 			}
-			const UserData = await user.findOne({_id: req.session.userId});
+			const UserData = await userModel.findOne({_id: req.session.userId});
 			if (!UserData) {
 				return {
 					code: CodeError.user_not_found,

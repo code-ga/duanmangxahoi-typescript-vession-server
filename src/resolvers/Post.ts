@@ -34,6 +34,8 @@ import {LikeModelType} from '../types/likeTypeModel';
 import {emojiType} from '../types/EmojiType';
 import {CategoryModel} from '../model/Category';
 import {CategoryResponse} from './../types/CategoryQuery';
+import {log} from '../util/logger';
+import {GetLikeInfoResponse} from '../types/GetLikeInfoResponse';
 
 registerEnumType(LikeType, {
 	name: 'LikeType',
@@ -42,6 +44,10 @@ registerEnumType(LikeType, {
 
 @Resolver()
 export class PostResolver {
+	ClassName: string;
+	constructor() {
+		this.ClassName = 'Post';
+	}
 	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
 	async createPost(
@@ -78,8 +84,14 @@ export class PostResolver {
 				{name: postData.category},
 				{$push: {posts: newPost._id}},
 			);
+			await userModel.findOneAndUpdate(
+				{_id: req.session.userId},
+
+				{$push: {posts: newPost._id}},
+			);
 			const postReturn = await postModel.find({});
-			console.log(
+			log.log(
+				this.ClassName,
 				`User [${req.session.userId}] create post with data: ${postData}`,
 			);
 			return {
@@ -89,7 +101,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -101,7 +113,7 @@ export class PostResolver {
 	async getPosts() {
 		try {
 			const posts = await postModel.find({});
-			console.log('User [vô danh] get all post');
+			log.log(this.ClassName, 'User [vô danh] get all post');
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
@@ -109,7 +121,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -146,7 +158,7 @@ export class PostResolver {
 				);
 			}
 			const postReturn = (await postModel.findById(id)) || undefined;
-			console.log(`User [vô danh] get post with id: ${id}`);
+			log.log(this.ClassName, `User [vô danh] get post with id: ${id}`);
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
@@ -154,7 +166,7 @@ export class PostResolver {
 				post: postReturn,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -251,7 +263,10 @@ export class PostResolver {
 				}
 			}
 			const postReturn = await postModel.find({});
-			console.log(`User [${req.session.userId}] update post with id: ${id}`);
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId}] update post with id: ${id}`,
+			);
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
@@ -259,7 +274,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -288,7 +303,9 @@ export class PostResolver {
 					],
 				};
 			}
+
 			const postData = await postModel.findOne({_id: id});
+
 			if (!postData) {
 				return {
 					code: CodeError.post_not_found,
@@ -302,10 +319,10 @@ export class PostResolver {
 					],
 				};
 			}
-
+			const authorId = postData?.author?.toString();
 			const updateUserIsAdmin = checkRoleCanDeletePost(userData.role);
 
-			if (postData.author !== req.session.userId && !updateUserIsAdmin) {
+			if (authorId !== req.session.userId && !updateUserIsAdmin) {
 				return {
 					code: CodeError.forbidden,
 					message: 'You are not allowed to delete this post',
@@ -325,8 +342,13 @@ export class PostResolver {
 				{name: postData.category},
 				{$pull: {posts: id}},
 			);
+
+			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}});
 			const postReturn = await postModel.find({});
-			console.log(`User [${req.session.userId}] delete post with id: ${id}`);
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId}] delete post with id: ${id}`,
+			);
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
@@ -334,7 +356,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -347,7 +369,7 @@ export class PostResolver {
 	async getUserPost(@Ctx() {req}: Context) {
 		try {
 			const postData = await postModel.find({author: req.session.userId});
-			console.log(`User [${req.session.userId}] get all post`);
+			log.log(this.ClassName, `User [${req.session.userId}] get all post`);
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
@@ -355,7 +377,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -423,8 +445,12 @@ export class PostResolver {
 					{$push: {posts: newPost._id}},
 				);
 			}
+			await userModel.findOneAndUpdate(
+				{_id: req.session.userId},
+				{$push: {posts: newPost._id}},
+			);
 			const postReturn = await postModel.find({isAlert: true});
-			console.log(`User [${req.session.userId}] create alert post`);
+			log.log(this.ClassName, `User [${req.session.userId}] create alert post`);
 			return {
 				code: CodeError.create_post_success,
 				message: 'Post created successfully',
@@ -432,7 +458,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -523,7 +549,7 @@ export class PostResolver {
 				}
 			}
 			const postReturn = await postModel.find({isAlert: true});
-			console.log(`User [${req.session.userId}] update alert post`);
+			log.log(this.ClassName, `User [${req.session.userId}] update alert post`);
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
@@ -531,7 +557,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -586,6 +612,7 @@ export class PostResolver {
 					],
 				};
 			}
+			const authorId = postData?.author?.toString();
 			await postModel.findOneAndDelete({_id: id});
 			const postReturn = await postModel.find({isAlert: true});
 			await CommentModel.deleteMany({post: id});
@@ -594,7 +621,8 @@ export class PostResolver {
 				{name: postData.category},
 				{$pull: {posts: id}},
 			);
-			console.log(`User [${req.session.userId}] delete alert post`);
+			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}});
+			log.log(this.ClassName, `User [${req.session.userId}] delete alert post`);
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
@@ -602,7 +630,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -615,7 +643,7 @@ export class PostResolver {
 	async GetAlertPost() {
 		try {
 			const postReturn = await postModel.find({isAlert: true});
-			console.log('User [vô danh] get alert post');
+			log.log(this.ClassName, 'User [vô danh] get alert post');
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
@@ -623,7 +651,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -676,48 +704,87 @@ export class PostResolver {
 					],
 				};
 			}
-			const likeData = await likeModel.findOne({
+			const exitingLike = await likeModel.findOne({
 				userId: userId,
 				ObjectId: PostId,
 			});
-			if (likeData) {
-				return {
-					code: CodeError.like_post_already_exists,
-					message: 'Like post already exists',
-					success: false,
-					errors: [
+			let post;
+			if (exitingLike) {
+				if (exitingLike.value !== likeType) {
+					await likeModel.findOneAndUpdate(
 						{
-							field: 'id',
-							message: 'Like post already exists',
+							userId: userId,
+							ObjectId: PostId,
 						},
-					],
-				};
+						{
+							...exitingLike,
+							value: likeType,
+						},
+					);
+					post = await postModel.findOneAndUpdate(
+						{_id: PostId},
+						{
+							likeNumber: postData.likeNumber + 2 * likeType,
+						},
+						{
+							new: true,
+						},
+					);
+				} else {
+					post = await postModel.findOneAndUpdate(
+						{_id: PostId},
+						{
+							likeNumber: postData.likeNumber - 2 * likeType,
+							$pull: {
+								likes: exitingLike._id,
+							},
+						},
+						{
+							new: true,
+						},
+					);
+					await userModel.findOneAndUpdate(
+						{_id: userId},
+						{
+							$pull: {
+								likes: exitingLike._id,
+							},
+						},
+					);
+					await likeModel.findOneAndDelete({
+						userId: userId,
+						ObjectId: PostId,
+					});
+				}
 			}
-			const like = new likeModel({
-				userId: userId,
-				ObjectId: PostId,
-				value: likeType,
-				type: LikeModelType.post,
-				emoji: likeType === LikeType.like ? emojiType.happy : emojiType.sad,
-			});
-			await like.save();
-			const post = await postModel.findOneAndUpdate(
-				{_id: PostId},
-				{
-					likes: [...postData.likes, like._id],
-					likeNumber: postData.likeNumber + likeType,
-				},
-				{
-					new: true,
-				},
-			);
-			userModel.findOneAndUpdate(
-				{_id: userId},
-				{
-					likes: [...userData.likes, like._id],
-				},
-			);
-			console.log(`User [${userId}] like post`);
+
+			if (!exitingLike) {
+				const like = new likeModel({
+					userId: userId,
+					ObjectId: PostId,
+					value: likeType,
+					type: LikeModelType.post,
+					emoji: likeType === LikeType.like ? emojiType.happy : emojiType.sad,
+				});
+				await like.save();
+				post = await postModel.findOneAndUpdate(
+					{_id: PostId},
+					{
+						likes: [...postData.likes, like._id],
+						likeNumber: postData.likeNumber + likeType,
+					},
+					{
+						new: true,
+					},
+				);
+				await userModel.findOneAndUpdate(
+					{_id: userId},
+					{
+						likes: [...userData.likes, like._id],
+					},
+				);
+			}
+			log.log(this.ClassName, `User [${userId}] like post`);
 			return {
 				code: CodeError.like_post_success,
 				message: 'Like post successfully',
@@ -726,7 +793,7 @@ export class PostResolver {
 			};
 		} catch (error) {
 			await session.abortTransaction();
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -742,7 +809,7 @@ export class PostResolver {
 	async GetCategory() {
 		try {
 			const categoryReturn = await CategoryModel.find({});
-			console.log('User [vô danh] get all category');
+			log.log(this.ClassName, 'User [vô danh] get all category');
 			return {
 				code: CodeError.get_category_success,
 				message: 'Category get successfully',
@@ -750,7 +817,7 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
@@ -765,7 +832,7 @@ export class PostResolver {
 			const postReturn = await postModel.find({
 				category: category,
 			});
-			console.log('User [vô danh] get all post in category');
+			log.log(this.ClassName, 'User [vô danh] get all post in category');
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
@@ -773,12 +840,33 @@ export class PostResolver {
 				success: true,
 			};
 		} catch (error) {
-			console.warn(error);
+			log.warn(this.ClassName, error);
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
 			};
 		}
+	}
+	// get like info
+	@Query(() => GetLikeInfoResponse)
+	async GetLikeInfo(
+		@Arg('LikeId') likeId: string,
+	): Promise<GetLikeInfoResponse> {
+		const likeData = await likeModel.findOne({_id: likeId});
+		if (!likeData) {
+			return {
+				code: CodeError.not_found,
+				message: 'Like not found',
+				success: false,
+			};
+		}
+		log.log(this.ClassName, 'User [vô danh] get like info');
+		return {
+			code: CodeError.get_like_info_success,
+			message: 'Like info get successfully',
+			success: true,
+			like: [likeData],
+		};
 	}
 }

@@ -13,7 +13,7 @@ export class Category {
 	name: string;
 	// all post in this category
 	@Field(() => [String])
-	@prop({required: true, default: []})
+	@prop({required: true, default: [], type: () => [String]})
 	posts: string[];
 	// field _id
 	@Field()

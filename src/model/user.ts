@@ -1,24 +1,24 @@
-import {getModelForClass, prop, ModelOptions} from '@typegoose/typegoose'
-import {role} from '../types/RoleEnum'
-import {Field, ObjectType} from 'type-graphql'
-import LikeModel from './LikeModel'
+import {getModelForClass, prop, ModelOptions} from '@typegoose/typegoose';
+import {role} from '../types/RoleEnum';
+import {Field, ObjectType} from 'type-graphql';
+import LikeModel from './LikeModel';
 
 @ModelOptions({schemaOptions: {timestamps: true}})
 @ObjectType()
 class User {
 	@Field()
-	public _id: string
+	public _id: string;
 
 	@Field()
 	@prop({required: true, unique: true})
-	public email: string
+	public email: string;
 
 	@Field()
 	@prop({required: true})
-	public username: string
+	public username: string;
 
 	@prop({required: true})
-	public password: string
+	public password: string;
 
 	@Field()
 	@prop({
@@ -26,36 +26,47 @@ class User {
 		default:
 			'https://iptc.org/wp-content/uploads/2018/05/avatar-anonymous-300x300.png',
 	})
-	public avatar: string
+	public avatar: string;
 
 	@Field()
 	@prop()
-	createdAt: Date
+	createdAt: Date;
 
 	@Field()
 	@prop()
-	updatedAt: Date
+	updatedAt: Date;
 
 	// role field
 	@Field(() => [role])
-	@prop({default: role.user})
-	role: role[]
+	@prop({default: [role.user]})
+	role: role[];
 
 	// like field
 	@Field(() => [String], {nullable: true})
 	@prop({
 		ref: () => LikeModel,
 		default: [],
+		type: () => [String],
 	})
-	likes: string[]
+	likes: string[];
 	// key word field
 	@Field(() => [String], {nullable: true})
-	@prop({default: []})
+	@prop({
+		default: [],
+		type: () => [String],
+	})
 	keywords: string[];
 	// post User Was watch
-	@Field(() => [String], { nullable: true })
-	@prop({ default: [] })
+	@Field(() => [String], {nullable: true})
+	@prop({
+		default: [],
+		type: () => [String],
+	})
 	postWasWatch: string[];
+	// post user was create
+	@Field(() => [String], {nullable: true})
+	@prop({default: [], type: () => [String]})
+	posts: string[];
 }
-export default User
-export const userModel = getModelForClass(User)
+export default User;
+export const userModel = getModelForClass(User);

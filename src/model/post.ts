@@ -1,8 +1,8 @@
 import {
 	getModelForClass,
 	ModelOptions,
-	Ref,
 	prop as Property,
+	Ref,
 } from '@typegoose/typegoose';
 import {defaultCategory} from '../constraint';
 import {Field, ObjectType} from 'type-graphql';
@@ -11,7 +11,11 @@ import Comment from './comment';
 import LikeModel from './LikeModel';
 import {Category} from './Category';
 @ObjectType()
-@ModelOptions({schemaOptions: {timestamps: true}})
+@ModelOptions({
+	schemaOptions: {
+		timestamps: true,
+	},
+})
 export class Post {
 	// title field
 	@Field()
@@ -31,13 +35,13 @@ export class Post {
 	public author: Ref<user>;
 	// image field
 	@Field(() => [String])
-	@Property({required: true, default: []})
+	@Property({required: true, default: [], type: () => [String]})
 	public photo: string[];
 
 	// keywords field
 	@Field(() => [String], {nullable: true})
-	@Property({default: [], required: true})
-	public keyword: string[]; // this field is optional the server is generate keyword from title and content
+	@Property({default: [], required: true, type: () => [String]})
+	public keyword: string[]; // this field is optional the server is generate keyword from title
 
 	// time field
 	@Field()
@@ -60,7 +64,12 @@ export class Post {
 	public views: number;
 
 	@Field(() => [String], {nullable: true})
-	@Property({default: [], required: true, ref: () => Comment})
+	@Property({
+		default: [],
+		required: true,
+		ref: () => Comment,
+		type: () => [String],
+	})
 	public comments: string[];
 
 	// is alert post
@@ -70,7 +79,12 @@ export class Post {
 
 	// like field
 	@Field(() => [String])
-	@Property({default: [], required: true, ref: () => LikeModel})
+	@Property({
+		default: [],
+		required: true,
+		ref: () => LikeModel,
+		type: () => [String],
+	})
 	public likes: string[];
 
 	// like number

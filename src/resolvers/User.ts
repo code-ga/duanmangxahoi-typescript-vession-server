@@ -20,8 +20,13 @@ registerEnumType(role, {
 	name: 'role', // this one is mandatory
 	description: 'the role enum', // this one is optional
 });
+import {log} from '../util/logger';
 @Resolver()
 export class UserResolver {
+	ClassName: string;
+	constructor() {
+		this.ClassName = 'User';
+	}
 	@Mutation(() => UserMutationResponse)
 	async register(
 		@Arg('RegisterInput') ResisterInput: resisterInput,
@@ -66,9 +71,12 @@ export class UserResolver {
 				keywords: generateKeywords(username),
 			});
 			await NewUser.save();
-			console.log(NewUser);
+			log.log(this.ClassName, NewUser);
 			req.session.userId = NewUser._id;
-			console.log(`register new user successful with id is ${NewUser._id}`);
+			log.log(
+				this.ClassName,
+				`register new user successful with id is ${NewUser._id}`,
+			);
 			return {
 				code: CodeError.successFully_registered,
 				success: true,
@@ -77,7 +85,7 @@ export class UserResolver {
 					'happy ! user register is successful . now you can use this app',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -148,7 +156,10 @@ export class UserResolver {
 			}
 
 			req.session.userId = userData._id;
-			console.log(`user login successful with id is ${userData._id}`);
+			log.log(
+				this.ClassName,
+				`user login successful with id is ${userData._id}`,
+			);
 
 			return {
 				code: CodeError.successFully_logged_in,
@@ -157,7 +168,7 @@ export class UserResolver {
 				message: 'happy ! you are logged in',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -176,11 +187,14 @@ export class UserResolver {
 					}
 					res.clearCookie(COOKIE_NAME);
 					resolve(true);
-					console.log(`user logout successful with id is ${ThisUserId}`);
+					log.log(
+						this.ClassName,
+						`user logout successful with id is ${ThisUserId}`,
+					);
 				});
 			});
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return new Promise((resolve, reject) => {
 				reject(false);
 			});
@@ -204,7 +218,10 @@ export class UserResolver {
 					],
 				};
 			}
-			console.log(`get user successful with user id is ${userData._id}`);
+			log.log(
+				this.ClassName,
+				`get user successful with user id is ${userData._id}`,
+			);
 			return {
 				code: CodeError.successFully_get_user,
 				success: true,
@@ -212,7 +229,7 @@ export class UserResolver {
 				message: 'happy ! you are get user',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -240,7 +257,10 @@ export class UserResolver {
 					],
 				};
 			}
-			console.log(`get author successful with user id is ${userData._id}`);
+			log.log(
+				this.ClassName,
+				`get author successful with user id is ${userData._id}`,
+			);
 			return {
 				code: CodeError.successFully_get_user,
 				success: true,
@@ -248,7 +268,7 @@ export class UserResolver {
 				message: 'happy ! you are get user author info',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -274,7 +294,10 @@ export class UserResolver {
 					],
 				};
 			}
-			console.log(`get user successful with user id is ${userData._id}`);
+			log.log(
+				this.ClassName,
+				`get user successful with user id is ${userData._id}`,
+			);
 			return {
 				code: CodeError.successFully_get_user,
 				success: true,
@@ -282,7 +305,7 @@ export class UserResolver {
 				message: 'happy ! you are get my profile',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -327,14 +350,17 @@ export class UserResolver {
 				{password: hashedPassword},
 				{new: true},
 			);
-			console.log(`change password successful with user id is ${userData._id}`);
+			log.log(
+				this.ClassName,
+				`change password successful with user id is ${userData._id}`,
+			);
 			return {
 				code: CodeError.change_password_success,
 				success: true,
 				message: 'happy ! you are change password',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -417,7 +443,8 @@ export class UserResolver {
 				role: [UserRole],
 			});
 			NewUser = await NewUser.save();
-			console.log(
+			log.log(
+				this.ClassName,
 				`create admin user successful with user id is ${NewUser._id}`,
 			);
 			return {
@@ -428,7 +455,7 @@ export class UserResolver {
 					'happy ! user register is successful . now you can use this app',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -480,7 +507,8 @@ export class UserResolver {
 				{_id: addRoleForUserInput.userId},
 				{$push: {role: addRoleForUserInput.role}},
 			);
-			console.log(
+			log.log(
+				this.ClassName,
 				`add role for user successful with user id is ${userData._id}`,
 			);
 			return {
@@ -489,7 +517,7 @@ export class UserResolver {
 				message: 'happy ! you are add role for user',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
@@ -540,7 +568,8 @@ export class UserResolver {
 				{_id: removeRoleForUserInput.userId},
 				{$pull: {role: removeRoleForUserInput.role}},
 			);
-			console.log(
+			log.log(
+				this.ClassName,
 				`remove role for user successful with user id is ${userData._id}`,
 			);
 			return {
@@ -549,7 +578,7 @@ export class UserResolver {
 				message: 'happy ! you are remove role for user',
 			};
 		} catch (err) {
-			console.warn(err);
+			log.warn(this.ClassName, err);
 			return {
 				code: CodeError.internal_server_error,
 				success: false,

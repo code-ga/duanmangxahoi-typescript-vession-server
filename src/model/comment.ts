@@ -33,14 +33,14 @@ export class Comment {
 	@Field()
 	public _id: string;
 	@Field(() => [String])
-	@Property({required: true, default: []})
+	@Property({required: true, default: [], type: () => [String]})
 	public likes: string[];
 	@Field(() => [String])
 	@Property({required: true})
 	public postId: string;
 	// photo comment
 	@Field(() => String)
-	@Property({required: true, default: []})
+	@Property({required: true, default: [], type: () => [String]})
 	public photo: string[];
 }
 export default Comment;
