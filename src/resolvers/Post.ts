@@ -109,8 +109,8 @@ export class PostResolver {
 			};
 		}
 	}
-	@Query(() => GetPostQueryResponse)
-	async getPosts() {
+	@Query(() => GetPostQueryResponse, {nullable: true})
+	async getPosts(): Promise<GetPostQueryResponse | null> {
 		try {
 			const posts = await postModel.find({});
 			log.log(this.ClassName, 'User [vô danh] get all post');
@@ -122,18 +122,19 @@ export class PostResolver {
 			};
 		} catch (error) {
 			log.warn(this.ClassName, error);
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			};
+			// return {
+			// 	code: CodeError.internal_server_error,
+			// 	message: 'Internal Server Error server error is the ' + error.message,
+			// 	success: false,
+			// };
+			return null;
 		}
 	}
-	@Query(() => getPostByIdResponse)
+	@Query(() => getPostByIdResponse, {nullable: true})
 	async getPostById(
 		@Arg('id') id: string,
 		@Ctx() {req}: Context,
-	): Promise<getPostByIdResponse> {
+	): Promise<getPostByIdResponse | null> {
 		try {
 			const postData = (await postModel.findById(id)) || undefined;
 			if (!postData) {
@@ -167,11 +168,12 @@ export class PostResolver {
 			};
 		} catch (error) {
 			log.warn(this.ClassName, error);
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			};
+			// return {
+			// 	code: CodeError.internal_server_error,
+			// 	message: 'Internal Server Error server error is the ' + error.message,
+			// 	success: false,
+			// };
+			return null;
 		}
 	}
 
@@ -365,8 +367,10 @@ export class PostResolver {
 		}
 	}
 	// get user post
-	@Query(() => GetPostQueryResponse)
-	async getUserPost(@Ctx() {req}: Context) {
+	@Query(() => GetPostQueryResponse, {nullable: true})
+	async getUserPost(
+		@Ctx() {req}: Context,
+	): Promise<GetPostQueryResponse | null> {
 		try {
 			const postData = await postModel.find({author: req.session.userId});
 			log.log(this.ClassName, `User [${req.session.userId}] get all post`);
@@ -378,11 +382,12 @@ export class PostResolver {
 			};
 		} catch (error) {
 			log.warn(this.ClassName, error);
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			};
+			// return {
+			// 	code: CodeError.internal_server_error,
+			// 	message: 'Internal Server Error server error is the ' + error.message,
+			// 	success: false,
+			// };
+			return null;
 		}
 	}
 	@Mutation(() => CreatePostMutationResponse)
@@ -639,24 +644,25 @@ export class PostResolver {
 		}
 	}
 	// get alert post
-	@Query(() => GetPostQueryResponse)
-	async GetAlertPost() {
+	@Query(() => GetPostQueryResponse, {nullable: true})
+	async GetAlertPost(): Promise<GetPostQueryResponse | null> {
 		try {
 			const postReturn = await postModel.find({isAlert: true});
 			log.log(this.ClassName, 'User [vô danh] get alert post');
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
 			};
 		} catch (error) {
 			log.warn(this.ClassName, error);
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			};
+			// return {
+			// 	code: CodeError.internal_server_error,
+			// 	message: 'Internal Server Error server error is the ' + error.message,
+			// 	success: false,
+			// };
+			return null;
 		}
 	}
 	// user like post
@@ -805,8 +811,8 @@ export class PostResolver {
 	}
 
 	// get all Category
-	@Query(() => CategoryResponse)
-	async GetCategory() {
+	@Query(() => CategoryResponse, {nullable: true})
+	async GetCategory(): Promise<CategoryResponse | null> {
 		try {
 			const categoryReturn = await CategoryModel.find({});
 			log.log(this.ClassName, 'User [vô danh] get all category');
@@ -818,16 +824,19 @@ export class PostResolver {
 			};
 		} catch (error) {
 			log.warn(this.ClassName, error);
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			};
+			// return {
+			// 	code: CodeError.internal_server_error,
+			// 	message: 'Internal Server Error server error is the ' + error.message,
+			// 	success: false,
+			// };
+			return null;
 		}
 	}
 	// get all post in category
-	@Query(() => GetPostQueryResponse)
-	async GetPostByCategory(@Arg('category') category: string) {
+	@Query(() => GetPostQueryResponse, {nullable: true})
+	async GetPostByCategory(
+		@Arg('category') category: string,
+	): Promise<GetPostQueryResponse | null> {
 		try {
 			const postReturn = await postModel.find({
 				category: category,
@@ -836,7 +845,7 @@ export class PostResolver {
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
 			};
 		} catch (error) {
@@ -849,24 +858,28 @@ export class PostResolver {
 		}
 	}
 	// get like info
-	@Query(() => GetLikeInfoResponse)
+	@Query(() => GetLikeInfoResponse, {nullable: true})
 	async GetLikeInfo(
 		@Arg('LikeId') likeId: string,
-	): Promise<GetLikeInfoResponse> {
-		const likeData = await likeModel.findOne({_id: likeId});
-		if (!likeData) {
+	): Promise<GetLikeInfoResponse | null> {
+		try {
+			const likeData = await likeModel.findOne({_id: likeId});
+			if (!likeData) {
+				return {
+					code: CodeError.not_found,
+					message: 'Like not found',
+					success: false,
+				};
+			}
+			log.log(this.ClassName, 'User [vô danh] get like info');
 			return {
-				code: CodeError.not_found,
-				message: 'Like not found',
-				success: false,
+				code: CodeError.get_like_info_success,
+				message: 'Like info get successfully',
+				success: true,
+				like: [likeData],
 			};
+		} catch (error) {
+			return null;
 		}
-		log.log(this.ClassName, 'User [vô danh] get like info');
-		return {
-			code: CodeError.get_like_info_success,
-			message: 'Like info get successfully',
-			success: true,
-			like: [likeData],
-		};
 	}
 }

@@ -14,17 +14,20 @@ export const log = new Log();
 export const LogPluginForApolloServer: ApolloServerPlugin<Context> = {
 	async requestDidStart() {
 		const start = Date.now();
-		let op: string | null;
+		let op: string | null | undefined;
 
 		return {
 			async didResolveOperation(context) {
-				op = context.operationName;
+				op = context.request.operationName;
 			},
 			async willSendResponse(context) {
 				const stop = Date.now();
 				const elapsed = stop - start;
 				const size = JSON.stringify(context.response).length * 2;
-				console.log(`operation=${op} duration=${elapsed}ms bytes=${size}`);
+				log.log(
+					'requestLog',
+					`operation=${op} duration=${elapsed}ms bytes=${size}`,
+				);
 			},
 		};
 	},
