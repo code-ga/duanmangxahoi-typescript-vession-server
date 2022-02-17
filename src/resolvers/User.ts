@@ -29,7 +29,7 @@ export class UserResolver {
 	}
 	@Mutation(() => UserMutationResponse)
 	async register(
-		@Arg('RegisterInput') ResisterInput: resisterInput,
+		@Arg('registerInput') ResisterInput: resisterInput,
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		const errorDataInput = ValidationResisterInput(ResisterInput);

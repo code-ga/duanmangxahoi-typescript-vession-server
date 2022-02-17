@@ -1,26 +1,26 @@
 /* eslint-disable no-inline-comments */
-import {createServer} from 'http';
-import 'reflect-metadata';
-import express from 'express';
-import path from 'path';
-import dotenv from 'dotenv';
-import session from 'express-session';
-import MongoStore from 'connect-mongo';
-import {ApolloServer} from 'apollo-server-express';
-import {buildSchema} from 'type-graphql';
-import {ApolloServerPluginLandingPageGraphQLPlayground} from 'apollo-server-core';
-import connectToDB from './util/connectToDB';
-import {HelloResolver} from './resolvers/hello';
-import {COOKIE_NAME} from './constraint';
-import {Context} from './types/Context';
-import {UserResolver} from './resolvers/User';
-import {PostResolver} from './resolvers/Post';
-import {LogPluginForApolloServer} from './util/logger';
-dotenv.config({path: path.resolve(__dirname, './.env')});
+import {createServer} from 'http'
+import 'reflect-metadata'
+import express from 'express'
+import path from 'path'
+import dotenv from 'dotenv'
+import session from 'express-session'
+import MongoStore from 'connect-mongo'
+import {ApolloServer} from 'apollo-server-express'
+import {buildSchema} from 'type-graphql'
+import {ApolloServerPluginLandingPageGraphQLPlayground} from 'apollo-server-core'
+import connectToDB from './util/connectToDB'
+import {HelloResolver} from './resolvers/hello'
+import {COOKIE_NAME} from './constraint'
+import {Context} from './types/Context'
+import {UserResolver} from './resolvers/User'
+import {PostResolver} from './resolvers/Post'
+import {LogPluginForApolloServer} from './util/logger'
+dotenv.config({path: path.resolve(__dirname, './.env')})
 const main = async () => {
-	const app = express();
-	const MongoUrl = process.env.DB_URL as string;
-	const connection = await connectToDB(MongoUrl);
+	const app = express()
+	const MongoUrl = process.env.DB_URL as string
+	const connection = await connectToDB(MongoUrl)
 	app.use(
 		session({
 			name: COOKIE_NAME,
@@ -35,7 +35,7 @@ const main = async () => {
 			resave: false,
 			saveUninitialized: false,
 		}),
-	);
+	)
 
 	const apolloServer = new ApolloServer({
 		schema: await buildSchema({
@@ -47,27 +47,27 @@ const main = async () => {
 			LogPluginForApolloServer,
 		],
 		context: ({req, res}): Context => ({req, res, connection}),
-	});
-	await apolloServer.start();
-	apolloServer.applyMiddleware({app, cors: false});
+	})
+	await apolloServer.start()
+	apolloServer.applyMiddleware({app, cors: false})
 	// disable x-powered-by header
-	app.disable('x-powered-by');
-	const HttpServer = createServer(app);
-	const port = process.env.PORT || 4000;
+	app.disable('x-powered-by')
+	const HttpServer = createServer(app)
+	const port = process.env.PORT || 4000
 
 	HttpServer.listen(port, () => {
 		// get host name and port
-		let hostName = HttpServer.address();
+		let hostName = HttpServer.address()
 		if (!hostName) {
-			throw new Error('Host name is not found');
+			throw new Error('Host name is not found')
 		}
 
 		if (typeof hostName === 'object') {
-			hostName = hostName.address;
+			hostName = hostName.address
 		}
 
 		if (hostName === '::') {
-			hostName = 'localhost';
+			hostName = 'localhost'
 		}
 		// console.log(process.env.HEROKU_APP_NAME)
 		console.log(
@@ -76,7 +76,7 @@ const main = async () => {
 					? hostName + ':' + port
 					: process.env.HEROKU_APP_NAME + '.herokuapp.com'
 			}${apolloServer.graphqlPath}`,
-		);
-	});
-};
-main().catch(console.error);
+		)
+	})
+}
+main().catch(console.error)
