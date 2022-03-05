@@ -5,7 +5,8 @@ import {Context} from '../types/Context';
 export class HelloResolver {
 	@Query(() => String)
 	hello(@Ctx() {req}: Context) {
-		console.log(req.session.userId);
+		const userId = req.session.userId;
+		console.log(userId);
 		return 'Hello World!';
 	}
 }

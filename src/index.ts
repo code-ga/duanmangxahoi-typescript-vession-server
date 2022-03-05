@@ -16,6 +16,7 @@ import {Context} from './types/Context'
 import {UserResolver} from './resolvers/User'
 import {PostResolver} from './resolvers/Post'
 import {LogPluginForApolloServer} from './util/logger'
+import cors from 'cors'
 dotenv.config({path: path.resolve(__dirname, './.env')})
 const main = async () => {
 	const app = express()
@@ -36,7 +37,12 @@ const main = async () => {
 			saveUninitialized: false,
 		}),
 	)
-
+	app.use(
+		cors({
+			origin: 'http://localhost:3000',
+			credentials: true,
+		}),
+	)
 	const apolloServer = new ApolloServer({
 		schema: await buildSchema({
 			resolvers: [HelloResolver, UserResolver, PostResolver],
@@ -54,6 +60,10 @@ const main = async () => {
 	app.disable('x-powered-by')
 	const HttpServer = createServer(app)
 	const port = process.env.PORT || 4000
+
+	app.get('/', (req, res) => {
+		res.send('server is running')
+	})
 
 	HttpServer.listen(port, () => {
 		// get host name and port

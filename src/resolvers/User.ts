@@ -1,46 +1,66 @@
 /* eslint-disable no-inline-comments */
-import {userModel} from '../model/user';
-import {Mutation, Resolver, Arg, Ctx, UseMiddleware} from 'type-graphql';
-import bcrypt from 'bcrypt';
-import {UserMutationResponse} from './../types/userMutationResponse';
-import {resisterInput} from '../types/RegisterInput';
-import {CodeError} from '../types/codeError';
-import {ValidationResisterInput} from '../util/ValidationResisterInput';
-import {LoginInput} from './../types/LoginInput';
-import {Context} from '../types/Context';
-import {COOKIE_NAME} from '../constraint';
-import {role} from '../types/RoleEnum';
-import {registerEnumType} from 'type-graphql';
-import {ChangePasswordInputType} from './../types/changePasswordInputType';
-import {ValidationChangePasswordInput} from '../util/validationPasswordInput';
-import {AddRoleForUserInput} from './../types/addRoleForUserInput';
-import {IsAuthorized} from './../middleware/checkAuth';
-import {generateKeywords} from './../util/keyword';
+import User, {userModel} from '../model/user'
+import {Mutation, Resolver, Arg, Ctx, UseMiddleware} from 'type-graphql'
+import bcrypt from 'bcrypt'
+import {UserMutationResponse} from './../types/userMutationResponse'
+import {resisterInput} from '../types/RegisterInput'
+import {CodeError} from '../types/codeError'
+import {ValidationResisterInput} from '../util/ValidationResisterInput'
+import {LoginInput} from './../types/LoginInput'
+import {Context} from '../types/Context'
+import {COOKIE_NAME} from '../constraint'
+import {role} from '../types/RoleEnum'
+import {registerEnumType} from 'type-graphql'
+import {ChangePasswordInputType} from './../types/changePasswordInputType'
+import {ValidationChangePasswordInput} from '../util/validationPasswordInput'
+import {AddRoleForUserInput} from './../types/addRoleForUserInput'
+import {IsAuthorized} from './../middleware/checkAuth'
+import {generateKeywords} from './../util/keyword'
 registerEnumType(role, {
 	name: 'role', // this one is mandatory
 	description: 'the role enum', // this one is optional
-});
-import {log} from '../util/logger';
+})
+import {log} from '../util/logger'
+import {Query} from 'type-graphql'
 @Resolver()
 export class UserResolver {
-	ClassName: string;
+	ClassName: string
 	constructor() {
-		this.ClassName = 'User';
+		this.ClassName = 'User'
+	}
+	@Query(() => User, {
+		nullable: true,
+	})
+	async me(@Ctx() {req}: Context) {
+		try {
+			const UserId = req.session.userId
+			if (!UserId) {
+				return null
+			}
+			const UserData = await userModel.findById(UserId)
+			if (!UserData) {
+				return null
+			}
+			return UserData
+		} catch (e) {
+			log.warn(this.ClassName, e)
+			return null
+		}
 	}
 	@Mutation(() => UserMutationResponse)
 	async register(
 		@Arg('registerInput') ResisterInput: resisterInput,
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
-		const errorDataInput = ValidationResisterInput(ResisterInput);
+		const errorDataInput = ValidationResisterInput(ResisterInput)
 		if (errorDataInput) {
-			return errorDataInput;
+			return errorDataInput
 		}
 		try {
-			const {email, password, username} = ResisterInput;
+			const {email, password, username} = ResisterInput
 			const exiting =
 				(await userModel.findOne({email})) ||
-				(await userModel.findOne({username}));
+				(await userModel.findOne({username}))
 			if (exiting) {
 				return {
 					code:
@@ -59,9 +79,9 @@ export class UserResolver {
 							} in database`,
 						},
 					],
-				};
+				}
 			}
-			const hashedPassword = await bcrypt.hash(password, 4);
+			const hashedPassword = await bcrypt.hash(password, 4)
 			const NewUser = new userModel({
 				email: email,
 				password: hashedPassword,
@@ -69,28 +89,28 @@ export class UserResolver {
 				role: [role.user],
 				likes: [],
 				keywords: generateKeywords(username),
-			});
-			await NewUser.save();
-			log.log(this.ClassName, NewUser);
-			req.session.userId = NewUser._id;
+			})
+			await NewUser.save()
+			log.log(this.ClassName, NewUser)
+			req.session.userId = NewUser._id
 			log.log(
 				this.ClassName,
 				`register new user successful with id is ${NewUser._id}`,
-			);
+			)
 			return {
 				code: CodeError.successFully_registered,
 				success: true,
 				user: NewUser,
 				message:
 					'happy ! user register is successful . now you can use this app',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error' + err.message,
-			};
+			}
 		}
 	}
 	@Mutation(() => UserMutationResponse)
@@ -99,10 +119,10 @@ export class UserResolver {
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		try {
-			const {usernameOrEmail, password} = loginInput;
+			const {UsernameOrEmail, password} = loginInput
 			const userData =
-				(await userModel.findOne({email: usernameOrEmail})) ||
-				(await userModel.findOne({username: usernameOrEmail}));
+				(await userModel.findOne({email: UsernameOrEmail})) ||
+				(await userModel.findOne({username: UsernameOrEmail}))
 			if (!userData) {
 				return process.env.NODE_ENV !== 'development'
 					? {
@@ -126,9 +146,9 @@ export class UserResolver {
 									message: 'user not found',
 								},
 							],
-					  };
+					  }
 			}
-			const isPasswordValid = await bcrypt.compare(password, userData.password);
+			const isPasswordValid = await bcrypt.compare(password, userData.password)
 			if (!isPasswordValid) {
 				return process.env.NODE_ENV !== 'development'
 					? {
@@ -152,59 +172,60 @@ export class UserResolver {
 									message: 'invalid password',
 								},
 							],
-					  };
+					  }
 			}
 
-			req.session.userId = userData._id;
+			req.session.userId = userData._id
 			log.log(
 				this.ClassName,
 				`user login successful with id is ${userData._id}`,
-			);
+			)
 
 			return {
 				code: CodeError.successFully_logged_in,
 				success: true,
 				user: userData,
 				message: 'happy ! you are logged in',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 	@Mutation(() => Boolean)
 	logout(@Ctx() {req, res}: Context): Promise<boolean> {
 		try {
 			return new Promise((resolve, reject) => {
-				const ThisUserId = req.session.userId;
+				const ThisUserId = req.session.userId
 				req.session.destroy((err) => {
 					if (err) {
-						reject(err);
+						reject(err)
 					}
-					res.clearCookie(COOKIE_NAME);
-					resolve(true);
+					res.clearCookie(COOKIE_NAME)
+					resolve(true)
 					log.log(
 						this.ClassName,
 						`user logout successful with id is ${ThisUserId}`,
-					);
-				});
-			});
+					)
+				})
+			})
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return new Promise((resolve, reject) => {
-				reject(false);
-			});
+				reject(false)
+			})
 		}
 	}
 	@Mutation(() => UserMutationResponse)
 	@UseMiddleware(IsAuthorized)
 	async getUser(@Ctx() {req}: Context): Promise<UserMutationResponse> {
 		try {
-			const userData = await userModel.findById(req.session.userId);
+			const userId = req.session.userId
+			const userData = await userModel.findById(userId)
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -216,25 +237,25 @@ export class UserResolver {
 							message: 'user not found',
 						},
 					],
-				};
+				}
 			}
 			log.log(
 				this.ClassName,
 				`get user successful with user id is ${userData._id}`,
-			);
+			)
 			return {
 				code: CodeError.successFully_get_user,
 				success: true,
 				user: userData,
 				message: 'happy ! you are get user',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 	@Mutation(() => UserMutationResponse)
@@ -243,7 +264,7 @@ export class UserResolver {
 		// @Ctx() {}: Context,
 	): Promise<UserMutationResponse> {
 		try {
-			const userData = await userModel.findById(authorId);
+			const userData = await userModel.findById(authorId)
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -255,32 +276,33 @@ export class UserResolver {
 							message: 'author not found',
 						},
 					],
-				};
+				}
 			}
 			log.log(
 				this.ClassName,
 				`get author successful with user id is ${userData._id}`,
-			);
+			)
 			return {
 				code: CodeError.successFully_get_user,
 				success: true,
 				user: userData,
 				message: 'happy ! you are get user author info',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 	// get my profile
 	@Mutation(() => UserMutationResponse)
 	async getMyProfile(@Ctx() {req}: Context): Promise<UserMutationResponse> {
 		try {
-			const userData = await userModel.findById(req.session.userId);
+			const userId = req.session.userId
+			const userData = await userModel.findById(userId)
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -292,25 +314,25 @@ export class UserResolver {
 							message: 'user not found',
 						},
 					],
-				};
+				}
 			}
 			log.log(
 				this.ClassName,
 				`get user successful with user id is ${userData._id}`,
-			);
+			)
 			return {
 				code: CodeError.successFully_get_user,
 				success: true,
 				user: userData,
 				message: 'happy ! you are get my profile',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 	// change password user
@@ -320,7 +342,8 @@ export class UserResolver {
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		try {
-			const userData = await userModel.findById(req.session.userId);
+			const userId = req.session.userId
+			const userData = await userModel.findById(userId)
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -332,40 +355,40 @@ export class UserResolver {
 							message: 'user not found',
 						},
 					],
-				};
+				}
 			}
 			const errorDataInput = await ValidationChangePasswordInput(
 				changePasswordInput,
 				userData.password,
-			);
+			)
 			if (errorDataInput) {
-				return errorDataInput;
+				return errorDataInput
 			}
 			const hashedPassword = await bcrypt.hash(
 				changePasswordInput.newPassword,
 				4,
-			);
+			)
 			await userModel.findOneAndUpdate(
-				{_id: req.session.userId},
+				{_id: userId},
 				{password: hashedPassword},
 				{new: true},
-			);
+			)
 			log.log(
 				this.ClassName,
 				`change password successful with user id is ${userData._id}`,
-			);
+			)
 			return {
 				code: CodeError.change_password_success,
 				success: true,
 				message: 'happy ! you are change password',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 	// admin User everyone must to write admin in here
@@ -377,10 +400,11 @@ export class UserResolver {
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		try {
+			const userId = req.session.userId
 			const UserIsSuperAdmin = await userModel.findOne({
-				_id: req.session.userId,
+				_id: userId,
 				role: role.superAdmin,
-			});
+			})
 			if (!UserIsSuperAdmin) {
 				return {
 					code: CodeError.access_denied,
@@ -392,7 +416,7 @@ export class UserResolver {
 							message: 'access denied',
 						},
 					],
-				};
+				}
 			}
 			if (UserRole === role.superAdmin) {
 				return {
@@ -405,16 +429,16 @@ export class UserResolver {
 							message: 'access denied',
 						},
 					],
-				};
+				}
 			}
-			const errorDataInput = ValidationResisterInput(ResisterInput);
+			const errorDataInput = ValidationResisterInput(ResisterInput)
 			if (errorDataInput) {
-				return errorDataInput;
+				return errorDataInput
 			}
-			const {email, password, username} = ResisterInput;
+			const {email, password, username} = ResisterInput
 			const exiting =
 				(await userModel.findOne({email})) ||
-				(await userModel.findOne({username}));
+				(await userModel.findOne({username}))
 			if (exiting) {
 				return {
 					code:
@@ -433,34 +457,34 @@ export class UserResolver {
 							} in database`,
 						},
 					],
-				};
+				}
 			}
-			const hashedPassword = await bcrypt.hash(password, 4);
+			const hashedPassword = await bcrypt.hash(password, 4)
 			let NewUser = new userModel({
 				email: email,
 				password: hashedPassword,
 				username: username,
 				role: [UserRole],
-			});
-			NewUser = await NewUser.save();
+			})
+			NewUser = await NewUser.save()
 			log.log(
 				this.ClassName,
 				`create admin user successful with user id is ${NewUser._id}`,
-			);
+			)
 			return {
 				code: CodeError.create_admin_account_success,
 				success: true,
 				user: NewUser,
 				message:
 					'happy ! user register is successful . now you can use this app',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error' + err.message,
-			};
+			}
 		}
 	}
 	// add role for user
@@ -470,10 +494,11 @@ export class UserResolver {
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		try {
+			const userId = req.session.userId
 			const UserIsSuperAdmin = await userModel.findOne({
-				_id: req.session.userId,
+				_id: userId,
 				role: role.superAdmin,
-			});
+			})
 			if (!UserIsSuperAdmin) {
 				return {
 					code: CodeError.access_denied,
@@ -485,11 +510,11 @@ export class UserResolver {
 							message: 'access denied',
 						},
 					],
-				};
+				}
 			}
 			const userData = await userModel.findOne({
 				_id: addRoleForUserInput.userId,
-			});
+			})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -501,28 +526,28 @@ export class UserResolver {
 							message: 'user not found',
 						},
 					],
-				};
+				}
 			}
 			await userModel.findOneAndUpdate(
 				{_id: addRoleForUserInput.userId},
 				{$push: {role: addRoleForUserInput.role}},
-			);
+			)
 			log.log(
 				this.ClassName,
 				`add role for user successful with user id is ${userData._id}`,
-			);
+			)
 			return {
 				code: CodeError.add_role_for_user_success,
 				success: true,
 				message: 'happy ! you are add role for user',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 	@Mutation(() => UserMutationResponse)
@@ -531,10 +556,11 @@ export class UserResolver {
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		try {
+			const userId = req.session.userId
 			const UserIsSuperAdmin = await userModel.findOne({
-				_id: req.session.userId,
+				_id: userId,
 				role: role.superAdmin,
-			});
+			})
 			if (!UserIsSuperAdmin) {
 				return {
 					code: CodeError.access_denied,
@@ -546,11 +572,11 @@ export class UserResolver {
 							message: 'access denied',
 						},
 					],
-				};
+				}
 			}
 			const userData = await userModel.findOne({
 				_id: removeRoleForUserInput.userId,
-			});
+			})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -562,28 +588,28 @@ export class UserResolver {
 							message: 'user not found',
 						},
 					],
-				};
+				}
 			}
 			await userModel.findOneAndUpdate(
 				{_id: removeRoleForUserInput.userId},
 				{$pull: {role: removeRoleForUserInput.role}},
-			);
+			)
 			log.log(
 				this.ClassName,
 				`remove role for user successful with user id is ${userData._id}`,
-			);
+			)
 			return {
 				code: CodeError.remove_role_for_user_success,
 				success: true,
 				message: 'happy ! you are remove role for user',
-			};
+			}
 		} catch (err) {
-			log.warn(this.ClassName, err);
+			log.warn(this.ClassName, err)
 			return {
 				code: CodeError.internal_server_error,
 				success: false,
 				message: 'Internal server error ' + err.message,
-			};
+			}
 		}
 	}
 }

@@ -55,9 +55,10 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<CreatePostMutationResponse> {
 		try {
+			const userId = req.session.userId;
 			const postData = {
 				...dataInput,
-				author: req.session.userId,
+				author: userId,
 				photo: [],
 				keyword: generateKeywords(dataInput.title),
 				category: dataInput.category ? dataInput.category : defaultCategory,
@@ -85,14 +86,14 @@ export class PostResolver {
 				{$push: {posts: newPost._id}},
 			);
 			await userModel.findOneAndUpdate(
-				{_id: req.session.userId},
+				{_id: userId},
 
 				{$push: {posts: newPost._id}},
 			);
 			const postReturn = await postModel.find({});
 			log.log(
 				this.ClassName,
-				`User [${req.session.userId}] create post with data: ${postData}`,
+				`User [${userId}] create post with data: ${postData}`,
 			);
 			return {
 				code: CodeError.create_post_success,
@@ -136,6 +137,7 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<getPostByIdResponse | null> {
 		try {
+			const userId = req.session.userId;
 			const postData = (await postModel.findById(id)) || undefined;
 			if (!postData) {
 				return {
@@ -152,9 +154,9 @@ export class PostResolver {
 			}
 			await postModel.findOneAndUpdate({_id: id}, {views: postData.views + 1});
 			// add post To Post User Was watch if have req
-			if (req.session.userId) {
+			if (userId) {
 				await userModel.findOneAndUpdate(
-					{_id: req.session.userId},
+					{_id: userId},
 					{$push: {postWasWatch: id}},
 				);
 			}
@@ -185,7 +187,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<UpdatePostMutationResponse> {
 		try {
-			const userData = await userModel.findOne({_id: req.session.userId});
+			const userId = req.session.userId;
+			const userData = await userModel.findOne({_id: userId});
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -215,7 +218,7 @@ export class PostResolver {
 			}
 			const updateUserIsAdmin = checkRoleCanEditPost(userData.role);
 
-			if (postData.author !== req.session.userId && !updateUserIsAdmin) {
+			if (postData.author !== userId && !updateUserIsAdmin) {
 				return {
 					code: CodeError.forbidden,
 					message: 'You are not allowed to update this post',
@@ -267,7 +270,7 @@ export class PostResolver {
 			const postReturn = await postModel.find({});
 			log.log(
 				this.ClassName,
-				`User [${req.session.userId}] update post with id: ${id}`,
+				`User [${userId}] update post with id: ${id}`,
 			);
 			return {
 				code: CodeError.update_post_success,
@@ -291,7 +294,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<UpdatePostMutationResponse> {
 		try {
-			const userData = await userModel.findOne({_id: req.session.userId});
+			const userId = req.session.userId;
+			const userData = await userModel.findOne({_id: userId});
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -324,7 +328,7 @@ export class PostResolver {
 			const authorId = postData?.author?.toString();
 			const updateUserIsAdmin = checkRoleCanDeletePost(userData.role);
 
-			if (authorId !== req.session.userId && !updateUserIsAdmin) {
+			if (authorId !== userId && !updateUserIsAdmin) {
 				return {
 					code: CodeError.forbidden,
 					message: 'You are not allowed to delete this post',
@@ -349,7 +353,7 @@ export class PostResolver {
 			const postReturn = await postModel.find({});
 			log.log(
 				this.ClassName,
-				`User [${req.session.userId}] delete post with id: ${id}`,
+				`User [${userId}] delete post with id: ${id}`,
 			);
 			return {
 				code: CodeError.delete_post_success,
@@ -372,8 +376,9 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<GetPostQueryResponse | null> {
 		try {
-			const postData = await postModel.find({author: req.session.userId});
-			log.log(this.ClassName, `User [${req.session.userId}] get all post`);
+			const userId = req.session.userId;
+			const postData = await postModel.find({author: userId});
+			log.log(this.ClassName, `User [${userId}] get all post`);
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
@@ -397,7 +402,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	) {
 		try {
-			const userData = await userModel.findOne({_id: req.session.userId});
+			const userId = req.session.userId;
+			const userData = await userModel.findOne({_id:userId});
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -427,7 +433,7 @@ export class PostResolver {
 			}
 			const postData = {
 				...dataInput,
-				author: req.session.userId,
+				author: userId,
 				photo: [],
 				keyword: generateKeywords(dataInput.title),
 				category: dataInput.category ? dataInput.category : defaultCategory,
@@ -451,11 +457,11 @@ export class PostResolver {
 				);
 			}
 			await userModel.findOneAndUpdate(
-				{_id: req.session.userId},
+				{_id: userId},
 				{$push: {posts: newPost._id}},
 			);
 			const postReturn = await postModel.find({isAlert: true});
-			log.log(this.ClassName, `User [${req.session.userId}] create alert post`);
+			log.log(this.ClassName, `User [${userId}] create alert post`);
 			return {
 				code: CodeError.create_post_success,
 				message: 'Post created successfully',
@@ -479,7 +485,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	) {
 		try {
-			const userData = await userModel.findOne({_id: req.session.userId});
+			const userId = req.session.userId;
+			const userData = await userModel.findOne({_id: userId});
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -554,7 +561,7 @@ export class PostResolver {
 				}
 			}
 			const postReturn = await postModel.find({isAlert: true});
-			log.log(this.ClassName, `User [${req.session.userId}] update alert post`);
+			log.log(this.ClassName, `User [${userId}] update alert post`);
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
@@ -575,7 +582,8 @@ export class PostResolver {
 	@UseMiddleware(IsAuthorized)
 	async DeleteAlertPost(@Arg('id') id: string, @Ctx() {req}: Context) {
 		try {
-			const userData = await userModel.findOne({_id: req.session.userId});
+			const userId = req.session.userId;
+			const userData = await userModel.findOne({_id: userId});
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -627,7 +635,7 @@ export class PostResolver {
 				{$pull: {posts: id}},
 			);
 			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}});
-			log.log(this.ClassName, `User [${req.session.userId}] delete alert post`);
+			log.log(this.ClassName, `User [${userId}] delete alert post`);
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
