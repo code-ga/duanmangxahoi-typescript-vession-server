@@ -1,12 +1,12 @@
-import {CreateCommentInput} from '../types/CreateCommentInput';
-import {Arg, Resolver, Mutation, UseMiddleware, Ctx} from 'type-graphql';
-import {CommentMutationResponse} from '../types/CommentMutationResponse';
-import {CodeError} from '../types/codeError';
-import {CommentModel} from '../model/comment';
-import {IsAuthorized} from './../middleware/checkAuth';
-import {Context} from '../types/Context';
-import {postModel} from './../model/post';
-import {userModel} from './../model/user';
+import { Arg, Ctx, Mutation, Resolver, UseMiddleware } from 'type-graphql';
+import { CommentModel } from '../model/comment';
+import { CodeError } from '../types/codeError';
+import { CommentMutationResponse } from '../types/CommentMutationResponse';
+import { Context } from '../types/Context';
+import { CreateCommentInput } from '../types/CreateCommentInput';
+import { IsAuthorized } from './../middleware/checkAuth';
+import { postModel } from './../model/post';
+import { userModel } from './../model/user';
 @Resolver()
 export class CommentResolver {
 	@Mutation(() => CommentMutationResponse)
