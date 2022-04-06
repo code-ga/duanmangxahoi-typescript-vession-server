@@ -1,4 +1,4 @@
-import {CodeError} from '../types/codeError';
+import {CodeError} from '../types/codeError'
 import {
 	Arg,
 	Ctx,
@@ -7,46 +7,44 @@ import {
 	Query,
 	UseMiddleware,
 	registerEnumType,
-} from 'type-graphql';
-import {postModel} from '../model/post';
-import {CreatePostInput} from '../types/CreatePostInput';
-import {CreatePostMutationResponse} from '../types/CreatePostMutationResponse';
-import {Context} from '../types/Context';
-import {GetPostQueryResponse} from '../types/getPostsQueryResponse';
-import {getPostByIdResponse} from '../types/GetPostByIdResponse';
-import {UpdatePostMutationResponse} from '../types/UpdatePostMutationResponse';
-import {UpdatePostInput} from '../types/UpdatePostInput';
-import {generateKeywords} from '../util/keyword';
-import {IsAuthorized} from '../middleware/checkAuth';
-import {defaultCategory} from '../constraint';
-import {userModel} from '../model/user';
-import {CommentModel} from './../model/comment';
-import {LikeType} from '../types/likeType';
+} from 'type-graphql'
+import {postModel} from '../model/post'
+import {CreatePostInput} from '../types/CreatePostInput'
+import {CreatePostMutationResponse} from '../types/CreatePostMutationResponse'
+import {Context} from '../types/Context'
+import {getPostByIdResponse} from '../types/GetPostByIdResponse'
+import {UpdatePostInput} from '../types/UpdatePostInput'
+import {generateKeywords} from '../util/keyword'
+import {IsAuthorized} from '../middleware/checkAuth'
+import {defaultCategory} from '../constraint'
+import {userModel} from '../model/user'
+import {CommentModel} from './../model/comment'
+import {LikeType} from '../types/likeType'
 import {
 	checkRoleCanCreateAlertPost,
 	checkRoleCanDeleteAlertPost,
 	checkRoleCanDeletePost,
 	checkRoleCanEditPost,
 	checkRoleCanUpdateAlertPost,
-} from '../util/checkRole';
-import {likeModel} from '../model/LikeModel';
-import {LikeModelType} from '../types/likeTypeModel';
-import {emojiType} from '../types/EmojiType';
-import {CategoryModel} from '../model/Category';
-import {CategoryResponse} from './../types/CategoryQuery';
-import {log} from '../util/logger';
-import {GetLikeInfoResponse} from '../types/GetLikeInfoResponse';
+} from '../util/checkRole'
+import {likeModel} from '../model/LikeModel'
+import {LikeModelType} from '../types/likeTypeModel'
+import {emojiType} from '../types/EmojiType'
+import {CategoryModel} from '../model/Category'
+import {CategoryResponse} from './../types/CategoryQuery'
+import {log} from '../util/logger'
+import {GetLikeInfoResponse} from '../types/GetLikeInfoResponse'
 
 registerEnumType(LikeType, {
 	name: 'LikeType',
 	description: 'Like type',
-});
+})
 
 @Resolver()
 export class PostResolver {
-	ClassName: string;
+	ClassName: string
 	constructor() {
-		this.ClassName = 'Post';
+		this.ClassName = 'Post'
 	}
 	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
@@ -55,7 +53,7 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<CreatePostMutationResponse> {
 		try {
-			const userId = req.session.userId;
+			const userId = req.session.userId
 			const postData = {
 				...dataInput,
 				author: userId,
@@ -63,72 +61,72 @@ export class PostResolver {
 				keyword: generateKeywords(dataInput.title),
 				category: dataInput.category ? dataInput.category : defaultCategory,
 				views: 0,
-			};
+			}
 
-			const newPost = new postModel(postData);
-			await newPost.save();
+			const newPost = new postModel(postData)
+			await newPost.save()
 			const CategoryData = await CategoryModel.findOne({
 				name: postData.category,
-			});
+			})
 			if (!CategoryData) {
 				await new CategoryModel({
 					name: postData.category,
 					posts: [newPost._id],
-				}).save();
+				}).save()
 			} else {
 				await CategoryModel.findOneAndUpdate(
 					{name: postData.category},
 					{$push: {posts: newPost._id}},
-				);
+				)
 			}
 			await CategoryModel.findOneAndUpdate(
 				{name: postData.category},
 				{$push: {posts: newPost._id}},
-			);
+			)
 			await userModel.findOneAndUpdate(
 				{_id: userId},
 
 				{$push: {posts: newPost._id}},
-			);
-			const postReturn = await postModel.find({});
+			)
+			const postReturn = await postModel.find({})
 			log.log(
 				this.ClassName,
 				`User [${userId}] create post with data: ${postData}`,
-			);
+			)
 			return {
 				code: CodeError.create_post_success,
 				message: 'Post created successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
-	@Query(() => GetPostQueryResponse, {nullable: true})
-	async getPosts(): Promise<GetPostQueryResponse | null> {
+	@Query(() => CreatePostMutationResponse, {nullable: true})
+	async getPosts(): Promise<CreatePostMutationResponse | null> {
 		try {
-			const posts = await postModel.find({});
-			log.log(this.ClassName, 'User [vô danh] get all post');
+			const posts = await postModel.find({})
+			log.log(this.ClassName, 'User [vô danh] get all post')
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
 				posts: posts,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			// return {
 			// 	code: CodeError.internal_server_error,
 			// 	message: 'Internal Server Error server error is the ' + error.message,
 			// 	success: false,
 			// };
-			return null;
+			return null
 		}
 	}
 	@Query(() => getPostByIdResponse, {nullable: true})
@@ -137,8 +135,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	): Promise<getPostByIdResponse | null> {
 		try {
-			const userId = req.session.userId;
-			const postData = (await postModel.findById(id)) || undefined;
+			const userId = req.session.userId
+			const postData = (await postModel.findById(id)) || undefined
 			if (!postData) {
 				return {
 					code: CodeError.post_not_found,
@@ -150,45 +148,45 @@ export class PostResolver {
 							message: 'Post not found',
 						},
 					],
-				};
+				}
 			}
-			await postModel.findOneAndUpdate({_id: id}, {views: postData.views + 1});
+			await postModel.findOneAndUpdate({_id: id}, {views: postData.views + 1})
 			// add post To Post User Was watch if have req
 			if (userId) {
 				await userModel.findOneAndUpdate(
 					{_id: userId},
 					{$push: {postWasWatch: id}},
-				);
+				)
 			}
-			const postReturn = (await postModel.findById(id)) || undefined;
-			log.log(this.ClassName, `User [vô danh] get post with id: ${id}`);
+			const postReturn = (await postModel.findById(id)) || undefined
+			log.log(this.ClassName, `User [vô danh] get post with id: ${id}`)
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
 				success: true,
 				post: postReturn,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			// return {
 			// 	code: CodeError.internal_server_error,
 			// 	message: 'Internal Server Error server error is the ' + error.message,
 			// 	success: false,
 			// };
-			return null;
+			return null
 		}
 	}
 
-	@Mutation(() => UpdatePostMutationResponse)
+	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
 	async updatePost(
 		@Arg('data') dataInput: UpdatePostInput,
 		@Arg('id') id: string,
 		@Ctx() {req}: Context,
-	): Promise<UpdatePostMutationResponse> {
+	): Promise<CreatePostMutationResponse> {
 		try {
-			const userId = req.session.userId;
-			const userData = await userModel.findOne({_id: userId});
+			const userId = req.session.userId
+			const userData = await userModel.findOne({_id: userId})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -200,9 +198,9 @@ export class PostResolver {
 							message: 'User not found',
 						},
 					],
-				};
+				}
 			}
-			const postData = await postModel.findOne({_id: id});
+			const postData = await postModel.findOne({_id: id})
 			if (!postData) {
 				return {
 					code: CodeError.post_not_found,
@@ -214,9 +212,9 @@ export class PostResolver {
 							message: 'Post you want to update is not found',
 						},
 					],
-				};
+				}
 			}
-			const updateUserIsAdmin = checkRoleCanEditPost(userData.role);
+			const updateUserIsAdmin = checkRoleCanEditPost(userData.role)
 
 			if (postData.author !== userId && !updateUserIsAdmin) {
 				return {
@@ -229,7 +227,7 @@ export class PostResolver {
 							message: 'You are not allowed to update this post',
 						},
 					],
-				};
+				}
 			}
 			const dataUpdate =
 				typeof dataInput.title !== 'undefined' && dataInput.category
@@ -242,60 +240,57 @@ export class PostResolver {
 					: {
 							...dataInput,
 							photo: [],
-					  };
+					  }
 			await postModel.findOneAndUpdate(
 				{_id: id},
 				{
 					...dataUpdate,
 				},
-			);
+			)
 
 			// if dataInput.category !== postData.category delete post in category model
 			if (dataInput.category !== postData.category) {
 				await CategoryModel.findOneAndUpdate(
 					{name: postData.category},
 					{$pull: {posts: id}},
-				);
+				)
 				// if don't have the dataInput.category create new category
 				const CategoryData = await CategoryModel.findOne({
 					name: dataInput.category,
-				});
+				})
 				if (!CategoryData) {
 					await new CategoryModel({
 						name: dataInput.category,
 						posts: [postData._id],
-					}).save();
+					}).save()
 				}
 			}
-			const postReturn = await postModel.find({});
-			log.log(
-				this.ClassName,
-				`User [${userId}] update post with id: ${id}`,
-			);
+			const postReturn = await postModel.find({})
+			log.log(this.ClassName, `User [${userId}] update post with id: ${id}`)
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
-	@Mutation(() => UpdatePostMutationResponse)
+	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
 	async deletePost(
 		@Arg('id') id: string,
 		@Ctx() {req}: Context,
-	): Promise<UpdatePostMutationResponse> {
+	): Promise<CreatePostMutationResponse> {
 		try {
-			const userId = req.session.userId;
-			const userData = await userModel.findOne({_id: userId});
+			const userId = req.session.userId
+			const userData = await userModel.findOne({_id: userId})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -307,10 +302,10 @@ export class PostResolver {
 							message: 'User not found',
 						},
 					],
-				};
+				}
 			}
 
-			const postData = await postModel.findOne({_id: id});
+			const postData = await postModel.findOne({_id: id})
 
 			if (!postData) {
 				return {
@@ -323,10 +318,10 @@ export class PostResolver {
 							message: 'Post you want to delete is not found',
 						},
 					],
-				};
+				}
 			}
-			const authorId = postData?.author?.toString();
-			const updateUserIsAdmin = checkRoleCanDeletePost(userData.role);
+			const authorId = postData?.author?.toString()
+			const updateUserIsAdmin = checkRoleCanDeletePost(userData.role)
 
 			if (authorId !== userId && !updateUserIsAdmin) {
 				return {
@@ -339,60 +334,57 @@ export class PostResolver {
 							message: 'You are not allowed to delete this post',
 						},
 					],
-				};
+				}
 			}
-			await postModel.findOneAndDelete({_id: id});
-			await CommentModel.deleteMany({post: id});
-			await likeModel.deleteMany({post: id});
+			await postModel.findOneAndDelete({_id: id})
+			await CommentModel.deleteMany({post: id})
+			await likeModel.deleteMany({post: id})
 			await CategoryModel.findOneAndUpdate(
 				{name: postData.category},
 				{$pull: {posts: id}},
-			);
+			)
 
-			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}});
-			const postReturn = await postModel.find({});
-			log.log(
-				this.ClassName,
-				`User [${userId}] delete post with id: ${id}`,
-			);
+			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
+			const postReturn = await postModel.find({})
+			log.log(this.ClassName, `User [${userId}] delete post with id: ${id}`)
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// get user post
-	@Query(() => GetPostQueryResponse, {nullable: true})
+	@Query(() => CreatePostMutationResponse, {nullable: true})
 	async getUserPost(
 		@Ctx() {req}: Context,
-	): Promise<GetPostQueryResponse | null> {
+	): Promise<CreatePostMutationResponse | null> {
 		try {
-			const userId = req.session.userId;
-			const postData = await postModel.find({author: userId});
-			log.log(this.ClassName, `User [${userId}] get all post`);
+			const userId = req.session.userId
+			const postData = await postModel.find({author: userId})
+			log.log(this.ClassName, `User [${userId}] get all post`)
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
 				posts: postData,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			// return {
 			// 	code: CodeError.internal_server_error,
 			// 	message: 'Internal Server Error server error is the ' + error.message,
 			// 	success: false,
 			// };
-			return null;
+			return null
 		}
 	}
 	@Mutation(() => CreatePostMutationResponse)
@@ -402,8 +394,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	) {
 		try {
-			const userId = req.session.userId;
-			const userData = await userModel.findOne({_id:userId});
+			const userId = req.session.userId
+			const userData = await userModel.findOne({_id: userId})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -415,9 +407,9 @@ export class PostResolver {
 							message: 'User not found',
 						},
 					],
-				};
+				}
 			}
-			const permission = checkRoleCanCreateAlertPost(userData.role);
+			const permission = checkRoleCanCreateAlertPost(userData.role)
 			if (!permission) {
 				return {
 					code: CodeError.forbidden,
@@ -429,7 +421,7 @@ export class PostResolver {
 							message: 'You are not allowed to create this post',
 						},
 					],
-				};
+				}
 			}
 			const postData = {
 				...dataInput,
@@ -439,42 +431,42 @@ export class PostResolver {
 				category: dataInput.category ? dataInput.category : defaultCategory,
 				views: 0,
 				isAlert: true,
-			};
-			const newPost = new postModel(postData);
-			await newPost.save();
+			}
+			const newPost = new postModel(postData)
+			await newPost.save()
 			const CategoryData = await CategoryModel.findOne({
 				name: postData.category,
-			});
+			})
 			if (!CategoryData) {
 				await new CategoryModel({
 					name: postData.category,
 					posts: [newPost._id],
-				}).save();
+				}).save()
 			} else {
 				await CategoryModel.findOneAndUpdate(
 					{name: postData.category},
 					{$push: {posts: newPost._id}},
-				);
+				)
 			}
 			await userModel.findOneAndUpdate(
 				{_id: userId},
 				{$push: {posts: newPost._id}},
-			);
-			const postReturn = await postModel.find({isAlert: true});
-			log.log(this.ClassName, `User [${userId}] create alert post`);
+			)
+			const postReturn = await postModel.find({isAlert: true})
+			log.log(this.ClassName, `User [${userId}] create alert post`)
 			return {
 				code: CodeError.create_post_success,
 				message: 'Post created successfully',
 				post: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	@Mutation(() => CreatePostMutationResponse)
@@ -485,8 +477,8 @@ export class PostResolver {
 		@Ctx() {req}: Context,
 	) {
 		try {
-			const userId = req.session.userId;
-			const userData = await userModel.findOne({_id: userId});
+			const userId = req.session.userId
+			const userData = await userModel.findOne({_id: userId})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -498,9 +490,9 @@ export class PostResolver {
 							message: 'User not found',
 						},
 					],
-				};
+				}
 			}
-			const permission = checkRoleCanUpdateAlertPost(userData.role);
+			const permission = checkRoleCanUpdateAlertPost(userData.role)
 			if (!permission) {
 				return {
 					code: CodeError.forbidden,
@@ -512,9 +504,9 @@ export class PostResolver {
 							message: 'You are not allowed to update this post',
 						},
 					],
-				};
+				}
 			}
-			const postData = (await postModel.findById(id)) || undefined;
+			const postData = (await postModel.findById(id)) || undefined
 			if (!postData) {
 				return {
 					code: CodeError.post_not_found,
@@ -526,7 +518,7 @@ export class PostResolver {
 							message: 'Post not found',
 						},
 					],
-				};
+				}
 			}
 			const dataUpdate = dataInput.title
 				? {
@@ -537,44 +529,44 @@ export class PostResolver {
 				: {
 						...dataInput,
 						photo: [],
-				  };
+				  }
 			await postModel.findOneAndUpdate(
 				{_id: id},
 				{
 					...dataUpdate,
 				},
-			);
+			)
 			if (dataInput.category !== postData.category) {
 				await CategoryModel.findOneAndUpdate(
 					{name: postData.category},
 					{$pull: {posts: id}},
-				);
+				)
 				// if don't have the dataInput.category create new category
 				const CategoryData = await CategoryModel.findOne({
 					name: dataInput.category,
-				});
+				})
 				if (!CategoryData) {
 					await new CategoryModel({
 						name: dataInput.category,
 						posts: [postData._id],
-					}).save();
+					}).save()
 				}
 			}
-			const postReturn = await postModel.find({isAlert: true});
-			log.log(this.ClassName, `User [${userId}] update alert post`);
+			const postReturn = await postModel.find({isAlert: true})
+			log.log(this.ClassName, `User [${userId}] update alert post`)
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
 				post: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// delete alert post
@@ -582,8 +574,8 @@ export class PostResolver {
 	@UseMiddleware(IsAuthorized)
 	async DeleteAlertPost(@Arg('id') id: string, @Ctx() {req}: Context) {
 		try {
-			const userId = req.session.userId;
-			const userData = await userModel.findOne({_id: userId});
+			const userId = req.session.userId
+			const userData = await userModel.findOne({_id: userId})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -595,9 +587,9 @@ export class PostResolver {
 							message: 'User not found',
 						},
 					],
-				};
+				}
 			}
-			const permission = checkRoleCanDeleteAlertPost(userData.role);
+			const permission = checkRoleCanDeleteAlertPost(userData.role)
 			if (!permission) {
 				return {
 					code: CodeError.forbidden,
@@ -609,9 +601,9 @@ export class PostResolver {
 							message: 'You are not allowed to delete this post',
 						},
 					],
-				};
+				}
 			}
-			const postData = await postModel.findOne({_id: id});
+			const postData = await postModel.findOne({_id: id})
 			if (!postData) {
 				return {
 					code: CodeError.post_not_found,
@@ -623,58 +615,58 @@ export class PostResolver {
 							message: 'Post not found',
 						},
 					],
-				};
+				}
 			}
-			const authorId = postData?.author?.toString();
-			await postModel.findOneAndDelete({_id: id});
-			const postReturn = await postModel.find({isAlert: true});
-			await CommentModel.deleteMany({post: id});
-			await likeModel.deleteMany({post: id});
+			const authorId = postData?.author?.toString()
+			await postModel.findOneAndDelete({_id: id})
+			const postReturn = await postModel.find({isAlert: true})
+			await CommentModel.deleteMany({post: id})
+			await likeModel.deleteMany({post: id})
 			await CategoryModel.findOneAndUpdate(
 				{name: postData.category},
 				{$pull: {posts: id}},
-			);
-			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}});
-			log.log(this.ClassName, `User [${userId}] delete alert post`);
+			)
+			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
+			log.log(this.ClassName, `User [${userId}] delete alert post`)
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
 				post: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// get alert post
-	@Query(() => GetPostQueryResponse, {nullable: true})
-	async GetAlertPost(): Promise<GetPostQueryResponse | null> {
+	@Query(() => CreatePostMutationResponse, {nullable: true})
+	async GetAlertPost(): Promise<CreatePostMutationResponse | null> {
 		try {
-			const postReturn = await postModel.find({isAlert: true});
-			log.log(this.ClassName, 'User [vô danh] get alert post');
+			const postReturn = await postModel.find({isAlert: true})
+			log.log(this.ClassName, 'User [vô danh] get alert post')
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
 				posts: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			// return {
 			// 	code: CodeError.internal_server_error,
 			// 	message: 'Internal Server Error server error is the ' + error.message,
 			// 	success: false,
 			// };
-			return null;
+			return null
 		}
 	}
 	// user like post
-	@Mutation(() => UpdatePostMutationResponse)
+	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
 	async likePost(
 		@Arg('id') PostId: string,
@@ -686,11 +678,11 @@ export class PostResolver {
 			},
 			connection,
 		}: Context,
-	): Promise<UpdatePostMutationResponse> {
-		const session = await connection.startSession();
-		session.startTransaction();
+	): Promise<CreatePostMutationResponse> {
+		const session = await connection.startSession()
+		session.startTransaction()
 		try {
-			const postData = await postModel.findOne({_id: PostId});
+			const postData = await postModel.findOne({_id: PostId})
 			if (!postData) {
 				return {
 					code: CodeError.post_not_found,
@@ -702,9 +694,9 @@ export class PostResolver {
 							message: 'Post not found',
 						},
 					],
-				};
+				}
 			}
-			const userData = await userModel.findOne({_id: userId});
+			const userData = await userModel.findOne({_id: userId})
 			if (!userData) {
 				return {
 					code: CodeError.user_not_found,
@@ -716,13 +708,13 @@ export class PostResolver {
 							message: 'User not found',
 						},
 					],
-				};
+				}
 			}
 			const exitingLike = await likeModel.findOne({
 				userId: userId,
 				ObjectId: PostId,
-			});
-			let post;
+			})
+			let post
 			if (exitingLike) {
 				if (exitingLike.value !== likeType) {
 					await likeModel.findOneAndUpdate(
@@ -734,7 +726,7 @@ export class PostResolver {
 							...exitingLike,
 							value: likeType,
 						},
-					);
+					)
 					post = await postModel.findOneAndUpdate(
 						{_id: PostId},
 						{
@@ -743,7 +735,7 @@ export class PostResolver {
 						{
 							new: true,
 						},
-					);
+					)
 				} else {
 					post = await postModel.findOneAndUpdate(
 						{_id: PostId},
@@ -756,7 +748,7 @@ export class PostResolver {
 						{
 							new: true,
 						},
-					);
+					)
 					await userModel.findOneAndUpdate(
 						{_id: userId},
 						{
@@ -764,11 +756,11 @@ export class PostResolver {
 								likes: exitingLike._id,
 							},
 						},
-					);
+					)
 					await likeModel.findOneAndDelete({
 						userId: userId,
 						ObjectId: PostId,
-					});
+					})
 				}
 			}
 
@@ -779,8 +771,8 @@ export class PostResolver {
 					value: likeType,
 					type: LikeModelType.post,
 					emoji: likeType === LikeType.like ? emojiType.happy : emojiType.sad,
-				});
-				await like.save();
+				})
+				await like.save()
 				post = await postModel.findOneAndUpdate(
 					{_id: PostId},
 					{
@@ -790,31 +782,31 @@ export class PostResolver {
 					{
 						new: true,
 					},
-				);
+				)
 				await userModel.findOneAndUpdate(
 					{_id: userId},
 					{
 						likes: [...userData.likes, like._id],
 					},
-				);
+				)
 			}
-			log.log(this.ClassName, `User [${userId}] like post`);
+			log.log(this.ClassName, `User [${userId}] like post`)
 			return {
 				code: CodeError.like_post_success,
 				message: 'Like post successfully',
-				post: post ? [post] : [],
+				posts: post ? [post] : [],
 				success: true,
-			};
+			}
 		} catch (error) {
-			await session.abortTransaction();
-			log.warn(this.ClassName, error);
+			await session.abortTransaction()
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		} finally {
-			await session.endSession();
+			await session.endSession()
 		}
 	}
 
@@ -822,47 +814,47 @@ export class PostResolver {
 	@Query(() => CategoryResponse, {nullable: true})
 	async GetCategory(): Promise<CategoryResponse | null> {
 		try {
-			const categoryReturn = await CategoryModel.find({});
-			log.log(this.ClassName, 'User [vô danh] get all category');
+			const categoryReturn = await CategoryModel.find({})
+			log.log(this.ClassName, 'User [vô danh] get all category')
 			return {
 				code: CodeError.get_category_success,
 				message: 'Category get successfully',
 				category: categoryReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			// return {
 			// 	code: CodeError.internal_server_error,
 			// 	message: 'Internal Server Error server error is the ' + error.message,
 			// 	success: false,
 			// };
-			return null;
+			return null
 		}
 	}
 	// get all post in category
-	@Query(() => GetPostQueryResponse, {nullable: true})
+	@Query(() => CreatePostMutationResponse, {nullable: true})
 	async GetPostByCategory(
 		@Arg('category') category: string,
-	): Promise<GetPostQueryResponse | null> {
+	): Promise<CreatePostMutationResponse | null> {
 		try {
 			const postReturn = await postModel.find({
 				category: category,
-			});
-			log.log(this.ClassName, 'User [vô danh] get all post in category');
+			})
+			log.log(this.ClassName, 'User [vô danh] get all post in category')
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
 				posts: postReturn,
 				success: true,
-			};
+			}
 		} catch (error) {
-			log.warn(this.ClassName, error);
+			log.warn(this.ClassName, error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// get like info
@@ -871,23 +863,23 @@ export class PostResolver {
 		@Arg('LikeId') likeId: string,
 	): Promise<GetLikeInfoResponse | null> {
 		try {
-			const likeData = await likeModel.findOne({_id: likeId});
+			const likeData = await likeModel.findOne({_id: likeId})
 			if (!likeData) {
 				return {
 					code: CodeError.not_found,
 					message: 'Like not found',
 					success: false,
-				};
+				}
 			}
-			log.log(this.ClassName, 'User [vô danh] get like info');
+			log.log(this.ClassName, 'User [vô danh] get like info')
 			return {
 				code: CodeError.get_like_info_success,
 				message: 'Like info get successfully',
 				success: true,
 				like: [likeData],
-			};
+			}
 		} catch (error) {
-			return null;
+			return null
 		}
 	}
 }

@@ -24,10 +24,10 @@ export const LogPluginForApolloServer: ApolloServerPlugin<Context> = {
 				const stop = Date.now()
 				const elapsed = stop - start
 				const size = JSON.stringify(context.response).length * 2
-				log.log(
-					'requestLog',
-					`operation=${op} duration=${elapsed}ms bytes=${size}`,
-				)
+				// log.log(
+				// 	'requestLog',
+				// 	`operation=${op} duration=${elapsed}ms bytes=${size}`,
+				// )
 			},
 		}
 	},
