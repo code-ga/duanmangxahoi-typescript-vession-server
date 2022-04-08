@@ -16,12 +16,16 @@ import {ValidationChangePasswordInput} from '../util/validationPasswordInput'
 import {AddRoleForUserInput} from './../types/addRoleForUserInput'
 import {IsAuthorized} from './../middleware/checkAuth'
 import {generateKeywords} from './../util/keyword'
+import {v4 as uuidV4} from 'uuid'
 registerEnumType(role, {
 	name: 'role', // this one is mandatory
 	description: 'the role enum', // this one is optional
 })
 import {log} from '../util/logger'
 import {Query} from 'type-graphql'
+import {ForgotPasswordInput} from '../types/ForgotPasswordInput'
+import {sendEmail} from './../util/sendEmail'
+import {TokenModel} from '../model/Token'
 @Resolver()
 export class UserResolver {
 	ClassName: string
@@ -611,5 +615,27 @@ export class UserResolver {
 				message: 'Internal server error ' + err.message,
 			}
 		}
+	}
+	@Mutation(() => Boolean)
+	async forgotPassword(
+		@Arg('forgotPasswordInput') forgotPasswordInput: ForgotPasswordInput,
+	): Promise<boolean> {
+		const user = await userModel.findOne({email: forgotPasswordInput.email})
+		if (!user) {
+			return true
+		}
+		const resetToken = uuidV4()
+		const hashResetToken = await bcrypt.hash(resetToken, 10)
+		await new TokenModel({
+			token: hashResetToken,
+			userId: user._id,
+		}).save()
+		const FE_URL = 'htpp://localhost:3000'
+		const url = `${FE_URL}/change-password?token=${resetToken}&userId=${user._id}`
+		await sendEmail(
+			forgotPasswordInput.email,
+			`<a href=${url}>Click here to reset password</a>`,
+		)
+		return true
 	}
 }

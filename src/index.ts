@@ -19,6 +19,7 @@ import {LogPluginForApolloServer} from './util/logger'
 import cors from 'cors'
 dotenv.config({path: path.resolve(__dirname, './.env')})
 const main = async () => {
+	console.time('main time start is :')
 	const app = express()
 	const MongoUrl = process.env.DB_URL as string
 	const connection = await connectToDB(MongoUrl)
@@ -39,7 +40,7 @@ const main = async () => {
 	)
 	app.use(
 		cors({
-			origin: 'http://localhost:3000',
+			origin: ['http://localhost:3000', '*.vercel.app'],
 			credentials: true,
 		}),
 	)
@@ -87,6 +88,7 @@ const main = async () => {
 					: process.env.HEROKU_APP_NAME + '.herokuapp.com'
 			}${apolloServer.graphqlPath}`,
 		)
+		console.timeEnd('main time start is :')
 	})
 }
 main().catch(console.error)
