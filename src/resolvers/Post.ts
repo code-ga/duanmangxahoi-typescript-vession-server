@@ -7,6 +7,8 @@ import {
 	Query,
 	UseMiddleware,
 	registerEnumType,
+	FieldResolver,
+	Root,
 } from 'type-graphql'
 import {postModel} from '../model/post'
 import {CreatePostInput} from '../types/CreatePostInput'
@@ -34,18 +36,25 @@ import {CategoryModel} from '../model/Category'
 import {CategoryResponse} from './../types/CategoryQuery'
 import {log} from '../util/logger'
 import {GetLikeInfoResponse} from '../types/GetLikeInfoResponse'
+import {Post} from './../model/post'
 
 registerEnumType(LikeType, {
 	name: 'LikeType',
 	description: 'Like type',
 })
 
-@Resolver()
+@Resolver((_of) => Post)
 export class PostResolver {
 	ClassName: string
 	constructor() {
 		this.ClassName = 'Post'
 	}
+	@FieldResolver((_return) => String)
+	contentSnippet(@Root() root: Post) {
+		console.log(root)
+		return root.content.slice(0, 100)
+	}
+
 	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
 	async createPost(
@@ -88,7 +97,7 @@ export class PostResolver {
 
 				{$push: {posts: newPost._id}},
 			)
-			const postReturn = await postModel.find({})
+			const postReturn = await postModel.find({}).lean().exec()
 			log.log(
 				this.ClassName,
 				`User [${userId}] create post with data: ${postData}`,
@@ -109,10 +118,19 @@ export class PostResolver {
 		}
 	}
 	@Query(() => CreatePostMutationResponse, {nullable: true})
-	async getPosts(): Promise<CreatePostMutationResponse | null> {
+	async getPosts(
+		@Ctx() {req}: Context,
+		@Arg('limit', {
+			defaultValue: 10,
+		})
+		limit: number,
+	): Promise<CreatePostMutationResponse | null> {
 		try {
-			const posts = await postModel.find({})
-			log.log(this.ClassName, 'User [vô danh] get all post')
+			const posts = await postModel.find({}).limit(limit).lean().exec()
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId || 'vô danh'}] get all post`,
+			)
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
@@ -121,11 +139,11 @@ export class PostResolver {
 			}
 		} catch (error) {
 			log.warn(this.ClassName, error)
-			// return {
-			// 	code: CodeError.internal_server_error,
-			// 	message: 'Internal Server Error server error is the ' + error.message,
-			// 	success: false,
-			// };
+			return {
+				code: CodeError.internal_server_error,
+				message: 'Internal Server Error server error is the ' + error.message,
+				success: false,
+			}
 			return null
 		}
 	}
@@ -159,7 +177,10 @@ export class PostResolver {
 				)
 			}
 			const postReturn = (await postModel.findById(id)) || undefined
-			log.log(this.ClassName, `User [vô danh] get post with id: ${id}`)
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId || 'vô danh'}] get post with id: ${id}`,
+			)
 			return {
 				code: CodeError.get_post_success,
 				message: 'Successfully get post',
@@ -168,11 +189,11 @@ export class PostResolver {
 			}
 		} catch (error) {
 			log.warn(this.ClassName, error)
-			// return {
-			// 	code: CodeError.internal_server_error,
-			// 	message: 'Internal Server Error server error is the ' + error.message,
-			// 	success: false,
-			// };
+			return {
+				code: CodeError.internal_server_error,
+				message: 'Internal Server Error server error is the ' + error.message,
+				success: false,
+			}
 			return null
 		}
 	}
@@ -265,7 +286,7 @@ export class PostResolver {
 					}).save()
 				}
 			}
-			const postReturn = await postModel.find({})
+			const postReturn = await postModel.find({}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] update post with id: ${id}`)
 			return {
 				code: CodeError.update_post_success,
@@ -345,7 +366,7 @@ export class PostResolver {
 			)
 
 			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
-			const postReturn = await postModel.find({})
+			const postReturn = await postModel.find({}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] delete post with id: ${id}`)
 			return {
 				code: CodeError.delete_post_success,
@@ -379,12 +400,12 @@ export class PostResolver {
 			}
 		} catch (error) {
 			log.warn(this.ClassName, error)
-			// return {
-			// 	code: CodeError.internal_server_error,
-			// 	message: 'Internal Server Error server error is the ' + error.message,
-			// 	success: false,
-			// };
-			return null
+			return {
+				code: CodeError.internal_server_error,
+				message: 'Internal Server Error server error is the ' + error.message,
+				success: false,
+			}
+			// return null
 		}
 	}
 	@Mutation(() => CreatePostMutationResponse)
@@ -392,7 +413,7 @@ export class PostResolver {
 	async CreateAlertPost(
 		@Arg('data') dataInput: CreatePostInput,
 		@Ctx() {req}: Context,
-	) {
+	): Promise<CreatePostMutationResponse> {
 		try {
 			const userId = req.session.userId
 			const userData = await userModel.findOne({_id: userId})
@@ -452,12 +473,12 @@ export class PostResolver {
 				{_id: userId},
 				{$push: {posts: newPost._id}},
 			)
-			const postReturn = await postModel.find({isAlert: true})
+			const postReturn = await postModel.find({isAlert: true}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] create alert post`)
 			return {
 				code: CodeError.create_post_success,
 				message: 'Post created successfully',
-				post: postReturn,
+				posts: [...postReturn],
 				success: true,
 			}
 		} catch (error) {
@@ -475,7 +496,7 @@ export class PostResolver {
 		@Arg('data') dataInput: UpdatePostInput,
 		@Arg('id') id: string,
 		@Ctx() {req}: Context,
-	) {
+	): Promise<CreatePostMutationResponse> {
 		try {
 			const userId = req.session.userId
 			const userData = await userModel.findOne({_id: userId})
@@ -552,12 +573,12 @@ export class PostResolver {
 					}).save()
 				}
 			}
-			const postReturn = await postModel.find({isAlert: true})
+			const postReturn = await postModel.find({isAlert: true}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] update alert post`)
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
 			}
 		} catch (error) {
@@ -572,7 +593,10 @@ export class PostResolver {
 	// delete alert post
 	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
-	async DeleteAlertPost(@Arg('id') id: string, @Ctx() {req}: Context) {
+	async DeleteAlertPost(
+		@Arg('id') id: string,
+		@Ctx() {req}: Context,
+	): Promise<CreatePostMutationResponse> {
 		try {
 			const userId = req.session.userId
 			const userData = await userModel.findOne({_id: userId})
@@ -619,7 +643,6 @@ export class PostResolver {
 			}
 			const authorId = postData?.author?.toString()
 			await postModel.findOneAndDelete({_id: id})
-			const postReturn = await postModel.find({isAlert: true})
 			await CommentModel.deleteMany({post: id})
 			await likeModel.deleteMany({post: id})
 			await CategoryModel.findOneAndUpdate(
@@ -627,11 +650,12 @@ export class PostResolver {
 				{$pull: {posts: id}},
 			)
 			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
+			const postReturn = await postModel.find({isAlert: true}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] delete alert post`)
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
-				post: postReturn,
+				posts: postReturn,
 				success: true,
 			}
 		} catch (error) {
@@ -645,10 +669,15 @@ export class PostResolver {
 	}
 	// get alert post
 	@Query(() => CreatePostMutationResponse, {nullable: true})
-	async GetAlertPost(): Promise<CreatePostMutationResponse | null> {
+	async GetAlertPost(
+		@Ctx() {req}: Context,
+	): Promise<CreatePostMutationResponse | null> {
 		try {
-			const postReturn = await postModel.find({isAlert: true})
-			log.log(this.ClassName, 'User [vô danh] get alert post')
+			const postReturn = await postModel.find({isAlert: true}).lean().exec()
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId || 'vô danh'}] get alert post`,
+			)
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
@@ -657,12 +686,11 @@ export class PostResolver {
 			}
 		} catch (error) {
 			log.warn(this.ClassName, error)
-			// return {
-			// 	code: CodeError.internal_server_error,
-			// 	message: 'Internal Server Error server error is the ' + error.message,
-			// 	success: false,
-			// };
-			return null
+			return {
+				code: CodeError.internal_server_error,
+				message: 'Internal Server Error server error is the ' + error.message,
+				success: false,
+			}
 		}
 	}
 	// user like post
@@ -812,10 +840,13 @@ export class PostResolver {
 
 	// get all Category
 	@Query(() => CategoryResponse, {nullable: true})
-	async GetCategory(): Promise<CategoryResponse | null> {
+	async GetCategory(@Ctx() {req}: Context): Promise<CategoryResponse | null> {
 		try {
 			const categoryReturn = await CategoryModel.find({})
-			log.log(this.ClassName, 'User [vô danh] get all category')
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId || 'vô danh'}] get all category`,
+			)
 			return {
 				code: CodeError.get_category_success,
 				message: 'Category get successfully',
@@ -824,24 +855,31 @@ export class PostResolver {
 			}
 		} catch (error) {
 			log.warn(this.ClassName, error)
-			// return {
-			// 	code: CodeError.internal_server_error,
-			// 	message: 'Internal Server Error server error is the ' + error.message,
-			// 	success: false,
-			// };
-			return null
+			return {
+				code: CodeError.internal_server_error,
+				message: 'Internal Server Error server error is the ' + error.message,
+				success: false,
+			}
+			// return null
 		}
 	}
 	// get all post in category
 	@Query(() => CreatePostMutationResponse, {nullable: true})
 	async GetPostByCategory(
 		@Arg('category') category: string,
+		@Ctx() {req}: Context,
 	): Promise<CreatePostMutationResponse | null> {
 		try {
-			const postReturn = await postModel.find({
-				category: category,
-			})
-			log.log(this.ClassName, 'User [vô danh] get all post in category')
+			const postReturn = await postModel
+				.find({
+					category: category,
+				})
+				.lean()
+				.exec()
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId || 'vô danh'}] get all post in category`,
+			)
 			return {
 				code: CodeError.get_post_success,
 				message: 'Post get successfully',
@@ -861,6 +899,7 @@ export class PostResolver {
 	@Query(() => GetLikeInfoResponse, {nullable: true})
 	async GetLikeInfo(
 		@Arg('LikeId') likeId: string,
+		@Ctx() {req}: Context,
 	): Promise<GetLikeInfoResponse | null> {
 		try {
 			const likeData = await likeModel.findOne({_id: likeId})
@@ -871,7 +910,10 @@ export class PostResolver {
 					success: false,
 				}
 			}
-			log.log(this.ClassName, 'User [vô danh] get like info')
+			log.log(
+				this.ClassName,
+				`User [${req.session.userId || 'vô danh'}] get like info`,
+			)
 			return {
 				code: CodeError.get_like_info_success,
 				message: 'Like info get successfully',

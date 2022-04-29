@@ -11,5 +11,5 @@ export class CategoryResponse implements IMutationResponse {
 	@Field(() => [FieldError], {nullable: true})
 	errors?: FieldError[];
 	@Field(() => [Category], {nullable: true})
-	category: Category[];
+	category?: Category[];
 }

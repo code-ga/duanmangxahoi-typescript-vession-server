@@ -4,7 +4,7 @@ import {AuthenticationError} from 'apollo-server-express';
 
 export const IsAuthorized: MiddlewareFn<Context> = async (data, next) => {
 	const userId = data.context.req.session.userId;
-	console.log(userId);
+	// console.log(userId);
 	if (!userId) {
 		throw new AuthenticationError(
 			'You are not authorized to perform this action',

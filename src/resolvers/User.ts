@@ -11,7 +11,7 @@ import {Context} from '../types/Context'
 import {COOKIE_NAME} from '../constraint'
 import {role} from '../types/RoleEnum'
 import {registerEnumType} from 'type-graphql'
-import {ChangePasswordInputType} from './../types/changePasswordInputType'
+import {ChangePasswordAfterLoginInputType} from './../types/changePasswordInputType'
 import {ValidationChangePasswordInput} from '../util/validationPasswordInput'
 import {AddRoleForUserInput} from './../types/addRoleForUserInput'
 import {IsAuthorized} from './../middleware/checkAuth'
@@ -26,6 +26,9 @@ import {Query} from 'type-graphql'
 import {ForgotPasswordInput} from '../types/ForgotPasswordInput'
 import {sendEmail} from './../util/sendEmail'
 import {TokenModel} from '../model/Token'
+import {ChangePasswordInputType} from '../types/changePasswordInput'
+import {checkPasswordIsValid} from './../util/ValidationResisterInput'
+const bcryptSalt = 10
 @Resolver()
 export class UserResolver {
 	ClassName: string
@@ -35,6 +38,7 @@ export class UserResolver {
 	@Query(() => User, {
 		nullable: true,
 	})
+	@UseMiddleware(IsAuthorized)
 	async me(@Ctx() {req}: Context) {
 		try {
 			const UserId = req.session.userId
@@ -85,7 +89,7 @@ export class UserResolver {
 					],
 				}
 			}
-			const hashedPassword = await bcrypt.hash(password, 4)
+			const hashedPassword = await bcrypt.hash(password, bcryptSalt)
 			const NewUser = new userModel({
 				email: email,
 				password: hashedPassword,
@@ -303,6 +307,7 @@ export class UserResolver {
 	}
 	// get my profile
 	@Mutation(() => UserMutationResponse)
+	@UseMiddleware(IsAuthorized)
 	async getMyProfile(@Ctx() {req}: Context): Promise<UserMutationResponse> {
 		try {
 			const userId = req.session.userId
@@ -341,8 +346,10 @@ export class UserResolver {
 	}
 	// change password user
 	@Mutation(() => UserMutationResponse)
-	async changePasswordUser(
-		@Arg('changePasswordInput') changePasswordInput: ChangePasswordInputType,
+	@UseMiddleware(IsAuthorized)
+	async changePasswordUserWasLogin(
+		@Arg('changePasswordInput')
+		changePasswordInput: ChangePasswordAfterLoginInputType,
 		@Ctx() {req}: Context,
 	): Promise<UserMutationResponse> {
 		try {
@@ -370,7 +377,7 @@ export class UserResolver {
 			}
 			const hashedPassword = await bcrypt.hash(
 				changePasswordInput.newPassword,
-				4,
+				bcryptSalt,
 			)
 			await userModel.findOneAndUpdate(
 				{_id: userId},
@@ -379,12 +386,13 @@ export class UserResolver {
 			)
 			log.log(
 				this.ClassName,
-				`change password successful with user id is ${userData._id}`,
+				`change password (after user login) successful with user id is ${userData._id}`,
 			)
 			return {
 				code: CodeError.change_password_success,
 				success: true,
 				message: 'happy ! you are change password',
+				user: userData,
 			}
 		} catch (err) {
 			log.warn(this.ClassName, err)
@@ -398,6 +406,7 @@ export class UserResolver {
 	// admin User everyone must to write admin in here
 	// create admin user
 	@Mutation(() => UserMutationResponse)
+	@UseMiddleware(IsAuthorized)
 	async createAccountHaveRole(
 		@Arg('RegisterInput') ResisterInput: resisterInput,
 		@Arg('role') UserRole: role,
@@ -463,7 +472,7 @@ export class UserResolver {
 					],
 				}
 			}
-			const hashedPassword = await bcrypt.hash(password, 4)
+			const hashedPassword = await bcrypt.hash(password, bcryptSalt)
 			let NewUser = new userModel({
 				email: email,
 				password: hashedPassword,
@@ -493,6 +502,7 @@ export class UserResolver {
 	}
 	// add role for user
 	@Mutation(() => UserMutationResponse)
+	@UseMiddleware(IsAuthorized)
 	async addRoleForUser(
 		@Arg('addRoleForUserInput') addRoleForUserInput: AddRoleForUserInput,
 		@Ctx() {req}: Context,
@@ -555,6 +565,7 @@ export class UserResolver {
 		}
 	}
 	@Mutation(() => UserMutationResponse)
+	@UseMiddleware(IsAuthorized)
 	async removeRoleForUser(
 		@Arg('removeRoleForUserInput') removeRoleForUserInput: AddRoleForUserInput, // vì input của hai cái này nó giống nhau
 		@Ctx() {req}: Context,
@@ -621,21 +632,122 @@ export class UserResolver {
 		@Arg('forgotPasswordInput') forgotPasswordInput: ForgotPasswordInput,
 	): Promise<boolean> {
 		const user = await userModel.findOne({email: forgotPasswordInput.email})
-		if (!user) {
-			return true
-		}
+		if (!user) return true
+		await TokenModel.findOneAndDelete({userId: user._id})
 		const resetToken = uuidV4()
-		const hashResetToken = await bcrypt.hash(resetToken, 10)
+		const hashResetToken = await bcrypt.hash(resetToken, bcryptSalt)
 		await new TokenModel({
 			token: hashResetToken,
 			userId: user._id,
 		}).save()
-		const FE_URL = 'htpp://localhost:3000'
+		const FE_URL = 'http://localhost:3000'
 		const url = `${FE_URL}/change-password?token=${resetToken}&userId=${user._id}`
 		await sendEmail(
 			forgotPasswordInput.email,
-			`<a href=${url}>Click here to reset password</a>`,
+			`<a href=${url}>Click here to reset password</a> <div>lưu ý : nếu bạn đánh mất link này vào tay người khác thì account của bạn có thể là sẽ bị mất và xin hãy nhấp vào link mới nhất<div/>`,
+		)
+		log.log(
+			this.ClassName,
+			`forgotPassword Mutation run successful with user id is ${user._id}`,
 		)
 		return true
+	}
+
+	@Mutation(() => UserMutationResponse)
+	async changePassword(
+		@Arg('changePasswordInput') changePasswordInput: ChangePasswordInputType,
+		@Arg('token') token: string,
+		@Arg('userId') userId: string,
+		@Ctx() {req}: Context,
+	): Promise<UserMutationResponse> {
+		if (!checkPasswordIsValid(changePasswordInput.NewPassword)) {
+			return {
+				success: false,
+				message: 'Password is not valid',
+				code: CodeError.password_not_valid,
+				error: [
+					{
+						field: 'NewPassword',
+						message: 'Password is not valid',
+					},
+				],
+			}
+		}
+		try {
+			const resetPasswordTokenDocument = await TokenModel.findOne({userId})
+			if (!resetPasswordTokenDocument) {
+				return {
+					success: false,
+					message: 'Token is not valid or expired',
+					code: CodeError.token_not_valid,
+					error: [
+						{
+							field: 'token',
+							message: 'Token is not valid or expired',
+						},
+					],
+				}
+			}
+
+			const resetPasswordTokenIsValid = await bcrypt.compare(
+				token,
+				resetPasswordTokenDocument.token,
+			)
+			if (!resetPasswordTokenIsValid) {
+				return {
+					success: false,
+					message: 'Token is not valid or expired',
+					code: CodeError.token_not_valid,
+					error: [
+						{
+							field: 'token',
+							message: 'Token is not valid or expired',
+						},
+					],
+				}
+			}
+			const user = await userModel.findOne({_id: userId})
+			if (!user) {
+				return {
+					success: false,
+					message: 'User not found where are you ?',
+					code: CodeError.user_not_found,
+					error: [
+						{
+							field: 'userId',
+							message: 'User not found where are you ?',
+						},
+					],
+				}
+			}
+			const hashPassword = await bcrypt.hash(
+				changePasswordInput.NewPassword,
+				bcryptSalt,
+			)
+			await userModel.findOneAndUpdate(
+				{_id: userId},
+				{password: hashPassword},
+				{new: true},
+			)
+			await resetPasswordTokenDocument.deleteOne()
+			req.session.userId = user._id
+			log.log(
+				this.ClassName,
+				`change password successful with user id is ${user._id}`,
+			)
+			return {
+				code: CodeError.change_password_success,
+				success: true,
+				message: 'happy ! you are change password',
+				user,
+			}
+		} catch (error) {
+			console.log(error)
+			return {
+				success: false,
+				message: 'Internal server error',
+				code: CodeError.internal_server_error,
+			}
+		}
 	}
 }

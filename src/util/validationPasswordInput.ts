@@ -1,8 +1,8 @@
 import {CodeError} from '../types/codeError';
-import {ChangePasswordInputType} from './../types/changePasswordInputType';
+import {ChangePasswordAfterLoginInputType} from './../types/changePasswordInputType';
 import bcrypt from 'bcrypt';
 export const ValidationChangePasswordInput = async (
-	ChangePasswordInput: ChangePasswordInputType,
+	ChangePasswordInput: ChangePasswordAfterLoginInputType,
 	oldPasswordInDatabase: string,
 ) => {
 	if (ChangePasswordInput.oldPassword.length < 6) {

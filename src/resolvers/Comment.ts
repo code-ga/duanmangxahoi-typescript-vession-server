@@ -1,12 +1,12 @@
-import { Arg, Ctx, Mutation, Resolver, UseMiddleware } from 'type-graphql';
-import { CommentModel } from '../model/comment';
-import { CodeError } from '../types/codeError';
-import { CommentMutationResponse } from '../types/CommentMutationResponse';
-import { Context } from '../types/Context';
-import { CreateCommentInput } from '../types/CreateCommentInput';
-import { IsAuthorized } from './../middleware/checkAuth';
-import { postModel } from './../model/post';
-import { userModel } from './../model/user';
+import {Arg, Ctx, Mutation, Resolver, UseMiddleware} from 'type-graphql'
+import {CommentModel} from '../model/comment'
+import {CodeError} from '../types/codeError'
+import {CommentMutationResponse} from '../types/CommentMutationResponse'
+import {Context} from '../types/Context'
+import {CreateCommentInput} from '../types/CreateCommentInput'
+import {IsAuthorized} from './../middleware/checkAuth'
+import {postModel} from './../model/post'
+import {userModel} from './../model/user'
 @Resolver()
 export class CommentResolver {
 	@Mutation(() => CommentMutationResponse)
@@ -16,7 +16,7 @@ export class CommentResolver {
 		@Ctx() {req}: Context,
 	): Promise<CommentMutationResponse> {
 		try {
-			const {content, postId} = data;
+			const {content, postId} = data
 			if (!(await postModel.findOne({_id: postId}))) {
 				return {
 					code: CodeError.post_not_found,
@@ -28,33 +28,33 @@ export class CommentResolver {
 							message: 'post not found',
 						},
 					],
-				};
+				}
 			}
 			const NewComment = new CommentModel({
 				content,
 				author: req.session.userId,
 				postId,
-			});
-			await NewComment.save();
+			})
+			await NewComment.save()
 			await postModel.findOneAndUpdate(
 				{_id: postId},
 				{$push: {comments: NewComment._id}},
-			);
-			const CommentReturn = await CommentModel.find({postId});
-			console.log(`User[${req.session.userId}] create comment`);
+			)
+			const CommentReturn = await CommentModel.find({postId})
+			console.log(`User[${req.session.userId}] create comment`)
 			return {
 				code: CodeError.create_comment_success,
 				success: true,
 				message: 'create comment successful',
 				comment: CommentReturn,
-			};
+			}
 		} catch (error) {
-			console.warn(error);
+			console.warn(error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// get comment
@@ -62,24 +62,24 @@ export class CommentResolver {
 	@UseMiddleware(IsAuthorized)
 	async getComment(
 		@Arg('postId') postId: string,
-		// @Ctx() { req }: Context
+		@Ctx() {req}: Context,
 	): Promise<CommentMutationResponse> {
 		try {
-			const CommentReturn = await CommentModel.find({postId});
-			console.log('User[vô danh] get comment');
+			const CommentReturn = await CommentModel.find({postId})
+			console.log(`User[${req.session.userId || 'vô danh'}] get comment`)
 			return {
 				code: CodeError.get_comment_success,
 				success: true,
 				message: 'get comment successful',
 				comment: CommentReturn,
-			};
+			}
 		} catch (error) {
-			console.warn(error);
+			console.warn(error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// update comment
@@ -91,7 +91,7 @@ export class CommentResolver {
 		@Arg('commentId') commentId: string,
 	): Promise<CommentMutationResponse> {
 		try {
-			const {content, postId} = data;
+			const {content, postId} = data
 			if (!(await postModel.findOne({_id: postId}))) {
 				return {
 					code: CodeError.post_not_found,
@@ -103,9 +103,9 @@ export class CommentResolver {
 							message: 'post not found',
 						},
 					],
-				};
+				}
 			}
-			const commentData = await CommentModel.findOne({_id: commentId});
+			const commentData = await CommentModel.findOne({_id: commentId})
 			if (!commentData) {
 				return {
 					code: CodeError.comment_not_found,
@@ -117,9 +117,9 @@ export class CommentResolver {
 							message: 'comment not found',
 						},
 					],
-				};
+				}
 			}
-			const UserData = await userModel.findOne({_id: req.session.userId});
+			const UserData = await userModel.findOne({_id: req.session.userId})
 			if (!UserData) {
 				return {
 					code: CodeError.user_not_found,
@@ -131,7 +131,7 @@ export class CommentResolver {
 							message: 'user not found',
 						},
 					],
-				};
+				}
 			}
 			if (UserData._id !== commentData.author) {
 				return {
@@ -144,24 +144,24 @@ export class CommentResolver {
 							message: 'user not author',
 						},
 					],
-				};
+				}
 			}
-			await CommentModel.findOneAndUpdate({_id: commentId}, {content});
-			const CommentReturn = await CommentModel.find({postId});
-			console.log(`User[${req.session.userId}] update comment`);
+			await CommentModel.findOneAndUpdate({_id: commentId}, {content})
+			const CommentReturn = await CommentModel.find({postId})
+			console.log(`User[${req.session.userId}] update comment`)
 			return {
 				code: CodeError.update_comment_success,
 				success: true,
 				message: 'update comment successful',
 				comment: CommentReturn,
-			};
+			}
 		} catch (error) {
-			console.warn(error);
+			console.warn(error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 	// delete comment
@@ -175,7 +175,7 @@ export class CommentResolver {
 			const thatComment = await CommentModel.findOne({
 				_id: commentId,
 				author: req.session.userId,
-			});
+			})
 			if (!thatComment) {
 				return {
 					code: CodeError.comment_not_found,
@@ -187,28 +187,28 @@ export class CommentResolver {
 							message: 'comment not found',
 						},
 					],
-				};
+				}
 			}
 			await CommentModel.findOneAndDelete({
 				_id: commentId,
-			});
+			})
 			const CommentReturn = await CommentModel.find({
 				postId: thatComment.postId,
-			});
-			console.log(`User[${req.session.userId}] delete comment`);
+			})
+			console.log(`User[${req.session.userId}] delete comment`)
 			return {
 				code: CodeError.delete_comment_success,
 				success: true,
 				message: 'delete comment successful',
 				comment: CommentReturn,
-			};
+			}
 		} catch (error) {
-			console.warn(error);
+			console.warn(error)
 			return {
 				code: CodeError.internal_server_error,
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
-			};
+			}
 		}
 	}
 }
