@@ -37,7 +37,7 @@
 	},
 	"scripts": {
 		"serve": "nodemon src/index.ts",
-		"start": "cd src && ts-node index.ts",
+		"start": "rm -rf dist && tsc && node dist/index.js",
 		"dev": "nodemon src/index.ts"
 	},
 	"devDependencies": {
