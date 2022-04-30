@@ -2,7 +2,7 @@
 import User, {userModel} from '../model/user'
 import {Mutation, Resolver, Arg, Ctx, UseMiddleware} from 'type-graphql'
 import bcrypt from 'bcrypt'
-import {UserMutationResponse} from './../types/UserMutationResponse'
+import {UserMutationResponse} from '../types/UserMutationResponse'
 import {resisterInput} from '../types/RegisterInput'
 import {CodeError} from './../types/CodeError'
 import {ValidationResisterInput} from '../util/ValidationResisterInput'
