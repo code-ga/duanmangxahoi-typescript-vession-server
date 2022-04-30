@@ -1,4 +1,4 @@
-import {CodeError} from '../types/codeError'
+import {CodeError} from '../types/CodeError'
 import {resisterInput} from './../types/RegisterInput'
 
 export const checkPasswordIsValid = (password: string) => {

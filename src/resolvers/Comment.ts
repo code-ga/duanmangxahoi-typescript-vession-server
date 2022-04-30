@@ -1,6 +1,6 @@
 import {Arg, Ctx, Mutation, Resolver, UseMiddleware} from 'type-graphql'
 import {CommentModel} from '../model/comment'
-import {CodeError} from '../types/codeError'
+import {CodeError} from '../types/CodeError'
 import {CommentMutationResponse} from '../types/CommentMutationResponse'
 import {Context} from '../types/Context'
 import {CreateCommentInput} from '../types/CreateCommentInput'
@@ -32,7 +32,7 @@ export class CommentResolver {
 			}
 			const NewComment = new CommentModel({
 				content,
-				author: req.session.userId,
+				authorId: req.session.userId,
 				postId,
 			})
 			await NewComment.save()
@@ -133,7 +133,7 @@ export class CommentResolver {
 					],
 				}
 			}
-			if (UserData._id !== commentData.author) {
+			if (UserData._id !== commentData.authorId) {
 				return {
 					code: CodeError.access_denied,
 					message: 'user not author',
@@ -174,7 +174,7 @@ export class CommentResolver {
 		try {
 			const thatComment = await CommentModel.findOne({
 				_id: commentId,
-				author: req.session.userId,
+				authorId: req.session.userId,
 			})
 			if (!thatComment) {
 				return {

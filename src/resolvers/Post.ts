@@ -1,4 +1,4 @@
-import {CodeError} from '../types/codeError'
+import {CodeError} from '../types/CodeError'
 import {
 	Arg,
 	Ctx,
@@ -19,9 +19,9 @@ import {UpdatePostInput} from '../types/UpdatePostInput'
 import {generateKeywords} from '../util/keyword'
 import {IsAuthorized} from '../middleware/checkAuth'
 import {defaultCategory} from '../constraint'
-import {userModel} from '../model/user'
+import User, {userModel} from '../model/user'
 import {CommentModel} from './../model/comment'
-import {LikeType} from '../types/likeType'
+import {LikeType} from '../types/LikeType'
 import {
 	checkRoleCanCreateAlertPost,
 	checkRoleCanDeleteAlertPost,
@@ -30,7 +30,7 @@ import {
 	checkRoleCanUpdateAlertPost,
 } from '../util/checkRole'
 import {likeModel} from '../model/LikeModel'
-import {LikeModelType} from '../types/likeTypeModel'
+import {LikeModelType} from '../types/LikeTypeModel'
 import {emojiType} from '../types/EmojiType'
 import {CategoryModel} from '../model/Category'
 import {CategoryResponse} from './../types/CategoryQuery'
@@ -54,6 +54,10 @@ export class PostResolver {
 		console.log(root)
 		return root.content.slice(0, 100)
 	}
+	@FieldResolver((_return) => User)
+	async author(@Root() root: Post) {
+		return await userModel.findOne({_id: root.authorId})
+	}
 
 	@Mutation(() => CreatePostMutationResponse)
 	@UseMiddleware(IsAuthorized)
@@ -65,7 +69,7 @@ export class PostResolver {
 			const userId = req.session.userId
 			const postData = {
 				...dataInput,
-				author: userId,
+				authorId: userId,
 				photo: [],
 				keyword: generateKeywords(dataInput.title),
 				category: dataInput.category ? dataInput.category : defaultCategory,
@@ -237,7 +241,7 @@ export class PostResolver {
 			}
 			const updateUserIsAdmin = checkRoleCanEditPost(userData.role)
 
-			if (postData.author !== userId && !updateUserIsAdmin) {
+			if (postData.authorId !== userId && !updateUserIsAdmin) {
 				return {
 					code: CodeError.forbidden,
 					message: 'You are not allowed to update this post',
@@ -341,7 +345,7 @@ export class PostResolver {
 					],
 				}
 			}
-			const authorId = postData?.author?.toString()
+			const authorId = `${postData?.authorId}`
 			const updateUserIsAdmin = checkRoleCanDeletePost(userData.role)
 
 			if (authorId !== userId && !updateUserIsAdmin) {
@@ -390,7 +394,7 @@ export class PostResolver {
 	): Promise<CreatePostMutationResponse | null> {
 		try {
 			const userId = req.session.userId
-			const postData = await postModel.find({author: userId})
+			const postData = await postModel.find({authorId: userId})
 			log.log(this.ClassName, `User [${userId}] get all post`)
 			return {
 				code: CodeError.get_post_success,
@@ -446,7 +450,7 @@ export class PostResolver {
 			}
 			const postData = {
 				...dataInput,
-				author: userId,
+				authorId: userId,
 				photo: [],
 				keyword: generateKeywords(dataInput.title),
 				category: dataInput.category ? dataInput.category : defaultCategory,
@@ -641,7 +645,7 @@ export class PostResolver {
 					],
 				}
 			}
-			const authorId = postData?.author?.toString()
+			const authorId = `${postData?.authorId}`
 			await postModel.findOneAndDelete({_id: id})
 			await CommentModel.deleteMany({post: id})
 			await likeModel.deleteMany({post: id})

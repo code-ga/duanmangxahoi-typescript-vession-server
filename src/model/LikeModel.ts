@@ -1,7 +1,7 @@
 import {getModelForClass, prop, ModelOptions} from '@typegoose/typegoose';
-import {LikeType} from '../types/likeType';
+import {LikeType} from '../types/LikeType';
 import {Field, ObjectType} from 'type-graphql';
-import {LikeModelType} from '../types/likeTypeModel';
+import {LikeModelType} from '../types/LikeTypeModel';
 import {emojiType} from '../types/EmojiType';
 
 @ModelOptions({schemaOptions: {timestamps: true}})

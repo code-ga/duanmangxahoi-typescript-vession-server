@@ -17,7 +17,7 @@ export class Comment {
 	@Property({
 		ref: () => user,
 	})
-	public author: Ref<user>;
+	public authorId: Ref<user>;
 
 	// content comment
 	@Field()
