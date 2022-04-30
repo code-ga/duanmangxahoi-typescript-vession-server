@@ -1,4 +1,4 @@
-import {CodeError} from '../types/CodeError'
+import {CodeError} from '../types/codeError'
 import {
 	Arg,
 	Ctx,
@@ -21,7 +21,7 @@ import {IsAuthorized} from '../middleware/checkAuth'
 import {defaultCategory} from '../constraint'
 import User, {userModel} from '../model/user'
 import {CommentModel} from './../model/comment'
-import {LikeType} from '../types/LikeType'
+import {LikeType} from '../types/likeType'
 import {
 	checkRoleCanCreateAlertPost,
 	checkRoleCanDeleteAlertPost,
@@ -30,7 +30,7 @@ import {
 	checkRoleCanUpdateAlertPost,
 } from '../util/checkRole'
 import {likeModel} from '../model/LikeModel'
-import {LikeModelType} from '../types/LikeTypeModel'
+import {LikeModelType} from '../types/likeTypeModel'
 import {emojiType} from '../types/EmojiType'
 import {CategoryModel} from '../model/Category'
 import {CategoryResponse} from './../types/CategoryQuery'

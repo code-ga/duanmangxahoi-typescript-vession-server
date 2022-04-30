@@ -1,6 +1,6 @@
 import {Arg, Ctx, Mutation, Resolver, UseMiddleware} from 'type-graphql'
 import {CommentModel} from '../model/comment'
-import {CodeError} from '../types/CodeError'
+import {CodeError} from '../types/codeError'
 import {CommentMutationResponse} from '../types/CommentMutationResponse'
 import {Context} from '../types/Context'
 import {CreateCommentInput} from '../types/CreateCommentInput'

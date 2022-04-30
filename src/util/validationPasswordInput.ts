@@ -1,5 +1,5 @@
-import {CodeError} from '../types/CodeError';
-import {ChangePasswordAfterLoginInputType} from '../types/ChangePasswordInputType';
+import {CodeError} from '../types/codeError';
+import {ChangePasswordAfterLoginInputType} from '../types/changePasswordInputType';
 import bcrypt from 'bcrypt';
 export const ValidationChangePasswordInput = async (
 	ChangePasswordInput: ChangePasswordAfterLoginInputType,
