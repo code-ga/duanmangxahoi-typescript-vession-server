@@ -1,7 +1,7 @@
 import {Field, ObjectType} from 'type-graphql';
 import {IMutationResponse} from './BaseResponseType';
-import User from './../model/user';
-import {FieldError} from './errorField';
+import User from '../model/user';
+import {FieldError} from './ErrorField';
 
 @ObjectType({implements: IMutationResponse})
 export class UserMutationResponse implements IMutationResponse {

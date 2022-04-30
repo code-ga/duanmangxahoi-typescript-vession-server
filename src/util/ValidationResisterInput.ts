@@ -1,5 +1,13 @@
-import {CodeError} from '../types/codeError';
-import {resisterInput} from './../types/RegisterInput';
+import {CodeError} from '../types/CodeError'
+import {resisterInput} from './../types/RegisterInput'
+
+export const checkPasswordIsValid = (password: string) => {
+	if (password.length < 6) {
+		return false
+	}
+	return true
+}
+
 export const ValidationResisterInput = (ResisterInput: resisterInput) => {
 	if (!ResisterInput.email.includes('@')) {
 		return {
@@ -12,8 +20,8 @@ export const ValidationResisterInput = (ResisterInput: resisterInput) => {
 					message: 'Email is not valid',
 				},
 			],
-		};
-	} else if (ResisterInput.password.length < 6) {
+		}
+	} else if (!checkPasswordIsValid(ResisterInput.password)) {
 		return {
 			success: false,
 			message: 'Password is not valid',
@@ -24,7 +32,7 @@ export const ValidationResisterInput = (ResisterInput: resisterInput) => {
 					message: 'Password is not valid',
 				},
 			],
-		};
+		}
 	}
-	return null;
-};
+	return null
+}

@@ -6,10 +6,10 @@ import {
 } from '@typegoose/typegoose';
 import {defaultCategory} from '../constraint';
 import {Field, ObjectType} from 'type-graphql';
-import user from './user';
 import Comment from './comment';
 import LikeModel from './LikeModel';
 import {Category} from './Category';
+import User from './user';
 @ObjectType()
 @ModelOptions({
 	schemaOptions: {
@@ -30,9 +30,12 @@ export class Post {
 
 	@Field(() => String)
 	@Property({
-		ref: () => user,
+		required: true,
 	})
-	public author: Ref<user>;
+	public authorId: string
+
+	@Field(() => User)
+	author: User
 	// image field
 	@Field(() => [String])
 	@Property({required: true, default: [], type: () => [String]})

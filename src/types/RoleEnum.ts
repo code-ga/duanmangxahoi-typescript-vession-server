@@ -1,6 +1,6 @@
 export enum role {
-	admin = 1,
-	superAdmin = 2,
+	superAdmin = 1,
+	admin = 2,
 	contentAdmin = 3,
 	user = 4,
 }

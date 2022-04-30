@@ -1,6 +1,6 @@
 import {Field, ObjectType} from 'type-graphql';
 import {IMutationResponse} from './BaseResponseType';
-import {FieldError} from './errorField';
+import {FieldError} from './ErrorField';
 import Like from '../model/LikeModel';
 
 @ObjectType({implements: IMutationResponse})

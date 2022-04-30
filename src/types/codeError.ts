@@ -54,5 +54,6 @@ export enum CodeError {
 	remove_role_for_user_success = 250,
 	get_category_success = 251,
 	update_like_post_success = 252,
-	get_like_info_success=253,
+	get_like_info_success = 253,
+	token_not_valid=434,
 }

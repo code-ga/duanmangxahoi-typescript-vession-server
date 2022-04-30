@@ -48,7 +48,6 @@ export const generateKeywords = (text: string) => {
 	findPermutation(0);
 
   const keywords = stringArray.reduce((acc: any, cur: string) => {
-    console.log(acc, cur);
 		const arr = createKeywords(cur);
 		return [...acc, ...arr];
 	}, []);
