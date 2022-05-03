@@ -67,6 +67,36 @@ export class PostResolver {
 	): Promise<CreatePostMutationResponse> {
 		try {
 			const userId = req.session.userId
+			const userData = await userModel.findOne({_id: userId})
+			if (!userData) {
+				return {
+					code: CodeError.user_not_found,
+					message: 'User not found',
+					success: false,
+					errors: [
+						{
+							field: 'id',
+							message: 'User not found',
+						},
+					],
+				}
+			}
+			if (dataInput.isAlert) {
+				const permission = checkRoleCanCreateAlertPost(userData.role)
+				if (!permission) {
+					return {
+						code: CodeError.forbidden,
+						message: 'You are not allowed to create this post',
+						success: false,
+						errors: [
+							{
+								field: 'author',
+								message: 'You are not allowed to create this post',
+							},
+						],
+					}
+				}
+			}
 			const postData = {
 				...dataInput,
 				authorId: userId,
@@ -92,13 +122,8 @@ export class PostResolver {
 					{$push: {posts: newPost._id}},
 				)
 			}
-			await CategoryModel.findOneAndUpdate(
-				{name: postData.category},
-				{$push: {posts: newPost._id}},
-			)
 			await userModel.findOneAndUpdate(
 				{_id: userId},
-
 				{$push: {posts: newPost._id}},
 			)
 			const postReturn = await postModel.find({}).lean().exec()
@@ -225,6 +250,23 @@ export class PostResolver {
 					],
 				}
 			}
+			if (dataInput.isAlert) {
+				const permission = checkRoleCanCreateAlertPost(userData.role)
+				if (!permission) {
+					return {
+						code: CodeError.forbidden,
+						message: 'You are not allowed to create alert post',
+						success: false,
+						errors: [
+							{
+								field: 'author',
+								message: 'You are not allowed to create alert post',
+							},
+						],
+					}
+				}
+			}
+
 			const postData = await postModel.findOne({_id: id})
 			if (!postData) {
 				return {
@@ -239,6 +281,23 @@ export class PostResolver {
 					],
 				}
 			}
+			if (postData.isAlert) {
+				const permission = checkRoleCanUpdateAlertPost(userData.role)
+				if (!permission) {
+					return {
+						code: CodeError.forbidden,
+						message: 'You are not allowed to update this post',
+						success: false,
+						errors: [
+							{
+								field: 'author',
+								message: 'You are not allowed to update this post',
+							},
+						],
+					}
+				}
+			}
+
 			const updateUserIsAdmin = checkRoleCanEditPost(userData.role)
 
 			if (postData.authorId !== userId && !updateUserIsAdmin) {
@@ -255,7 +314,7 @@ export class PostResolver {
 				}
 			}
 			const dataUpdate =
-				typeof dataInput.title !== 'undefined' && dataInput.category
+				dataInput.title && dataInput.category
 					? {
 							...dataInput,
 							photo: [],
@@ -345,6 +404,22 @@ export class PostResolver {
 					],
 				}
 			}
+			if (postData.isAlert) {
+				const permission = checkRoleCanDeleteAlertPost(userData.role)
+				if (!permission) {
+					return {
+						code: CodeError.forbidden,
+						message: 'You are not allowed to delete this post',
+						success: false,
+						errors: [
+							{
+								field: 'author',
+								message: 'You are not allowed to delete this post',
+							},
+						],
+					}
+				}
+			}
 			const authorId = `${postData?.authorId}`
 			const updateUserIsAdmin = checkRoleCanDeletePost(userData.role)
 
@@ -368,7 +443,6 @@ export class PostResolver {
 				{name: postData.category},
 				{$pull: {posts: id}},
 			)
-
 			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
 			const postReturn = await postModel.find({}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] delete post with id: ${id}`)
@@ -412,265 +486,8 @@ export class PostResolver {
 			// return null
 		}
 	}
-	@Mutation(() => CreatePostMutationResponse)
-	@UseMiddleware(IsAuthorized)
-	async CreateAlertPost(
-		@Arg('data') dataInput: CreatePostInput,
-		@Ctx() {req}: Context,
-	): Promise<CreatePostMutationResponse> {
-		try {
-			const userId = req.session.userId
-			const userData = await userModel.findOne({_id: userId})
-			if (!userData) {
-				return {
-					code: CodeError.user_not_found,
-					message: 'User not found',
-					success: false,
-					errors: [
-						{
-							field: 'id',
-							message: 'User not found',
-						},
-					],
-				}
-			}
-			const permission = checkRoleCanCreateAlertPost(userData.role)
-			if (!permission) {
-				return {
-					code: CodeError.forbidden,
-					message: 'You are not allowed to create this post',
-					success: false,
-					errors: [
-						{
-							field: 'author',
-							message: 'You are not allowed to create this post',
-						},
-					],
-				}
-			}
-			const postData = {
-				...dataInput,
-				authorId: userId,
-				photo: [],
-				keyword: generateKeywords(dataInput.title),
-				category: dataInput.category ? dataInput.category : defaultCategory,
-				views: 0,
-				isAlert: true,
-			}
-			const newPost = new postModel(postData)
-			await newPost.save()
-			const CategoryData = await CategoryModel.findOne({
-				name: postData.category,
-			})
-			if (!CategoryData) {
-				await new CategoryModel({
-					name: postData.category,
-					posts: [newPost._id],
-				}).save()
-			} else {
-				await CategoryModel.findOneAndUpdate(
-					{name: postData.category},
-					{$push: {posts: newPost._id}},
-				)
-			}
-			await userModel.findOneAndUpdate(
-				{_id: userId},
-				{$push: {posts: newPost._id}},
-			)
-			const postReturn = await postModel.find({isAlert: true}).lean().exec()
-			log.log(this.ClassName, `User [${userId}] create alert post`)
-			return {
-				code: CodeError.create_post_success,
-				message: 'Post created successfully',
-				posts: [...postReturn],
-				success: true,
-			}
-		} catch (error) {
-			log.warn(this.ClassName, error)
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			}
-		}
-	}
-	@Mutation(() => CreatePostMutationResponse)
-	@UseMiddleware(IsAuthorized)
-	async UpdateAlertPost(
-		@Arg('data') dataInput: UpdatePostInput,
-		@Arg('id') id: string,
-		@Ctx() {req}: Context,
-	): Promise<CreatePostMutationResponse> {
-		try {
-			const userId = req.session.userId
-			const userData = await userModel.findOne({_id: userId})
-			if (!userData) {
-				return {
-					code: CodeError.user_not_found,
-					message: 'User not found',
-					success: false,
-					errors: [
-						{
-							field: 'id',
-							message: 'User not found',
-						},
-					],
-				}
-			}
-			const permission = checkRoleCanUpdateAlertPost(userData.role)
-			if (!permission) {
-				return {
-					code: CodeError.forbidden,
-					message: 'You are not allowed to update this post',
-					success: false,
-					errors: [
-						{
-							field: 'author',
-							message: 'You are not allowed to update this post',
-						},
-					],
-				}
-			}
-			const postData = (await postModel.findById(id)) || undefined
-			if (!postData) {
-				return {
-					code: CodeError.post_not_found,
-					message: 'Post not found',
-					success: false,
-					errors: [
-						{
-							field: 'id',
-							message: 'Post not found',
-						},
-					],
-				}
-			}
-			const dataUpdate = dataInput.title
-				? {
-						...dataInput,
-						photo: [],
-						keyword: generateKeywords(dataInput.title),
-				  }
-				: {
-						...dataInput,
-						photo: [],
-				  }
-			await postModel.findOneAndUpdate(
-				{_id: id},
-				{
-					...dataUpdate,
-				},
-			)
-			if (dataInput.category !== postData.category) {
-				await CategoryModel.findOneAndUpdate(
-					{name: postData.category},
-					{$pull: {posts: id}},
-				)
-				// if don't have the dataInput.category create new category
-				const CategoryData = await CategoryModel.findOne({
-					name: dataInput.category,
-				})
-				if (!CategoryData) {
-					await new CategoryModel({
-						name: dataInput.category,
-						posts: [postData._id],
-					}).save()
-				}
-			}
-			const postReturn = await postModel.find({isAlert: true}).lean().exec()
-			log.log(this.ClassName, `User [${userId}] update alert post`)
-			return {
-				code: CodeError.update_post_success,
-				message: 'Post updated successfully',
-				posts: postReturn,
-				success: true,
-			}
-		} catch (error) {
-			log.warn(this.ClassName, error)
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			}
-		}
-	}
-	// delete alert post
-	@Mutation(() => CreatePostMutationResponse)
-	@UseMiddleware(IsAuthorized)
-	async DeleteAlertPost(
-		@Arg('id') id: string,
-		@Ctx() {req}: Context,
-	): Promise<CreatePostMutationResponse> {
-		try {
-			const userId = req.session.userId
-			const userData = await userModel.findOne({_id: userId})
-			if (!userData) {
-				return {
-					code: CodeError.user_not_found,
-					message: 'User not found',
-					success: false,
-					errors: [
-						{
-							field: 'id',
-							message: 'User not found',
-						},
-					],
-				}
-			}
-			const permission = checkRoleCanDeleteAlertPost(userData.role)
-			if (!permission) {
-				return {
-					code: CodeError.forbidden,
-					message: 'You are not allowed to delete this post',
-					success: false,
-					errors: [
-						{
-							field: 'author',
-							message: 'You are not allowed to delete this post',
-						},
-					],
-				}
-			}
-			const postData = await postModel.findOne({_id: id})
-			if (!postData) {
-				return {
-					code: CodeError.post_not_found,
-					message: 'Post not found',
-					success: false,
-					errors: [
-						{
-							field: 'id',
-							message: 'Post not found',
-						},
-					],
-				}
-			}
-			const authorId = `${postData?.authorId}`
-			await postModel.findOneAndDelete({_id: id})
-			await CommentModel.deleteMany({post: id})
-			await likeModel.deleteMany({post: id})
-			await CategoryModel.findOneAndUpdate(
-				{name: postData.category},
-				{$pull: {posts: id}},
-			)
-			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
-			const postReturn = await postModel.find({isAlert: true}).lean().exec()
-			log.log(this.ClassName, `User [${userId}] delete alert post`)
-			return {
-				code: CodeError.delete_post_success,
-				message: 'Post deleted successfully',
-				posts: postReturn,
-				success: true,
-			}
-		} catch (error) {
-			log.warn(this.ClassName, error)
-			return {
-				code: CodeError.internal_server_error,
-				message: 'Internal Server Error server error is the ' + error.message,
-				success: false,
-			}
-		}
-	}
+
+	
 	// get alert post
 	@Query(() => CreatePostMutationResponse, {nullable: true})
 	async GetAlertPost(
