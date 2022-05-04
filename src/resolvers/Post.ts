@@ -47,11 +47,10 @@ registerEnumType(LikeType, {
 export class PostResolver {
 	ClassName: string
 	constructor() {
-		this.ClassName = 'Post'
+		this.ClassName = this.constructor.name
 	}
 	@FieldResolver((_return) => String)
 	contentSnippet(@Root() root: Post) {
-		console.log(root)
 		return root.content.slice(0, 100)
 	}
 	@FieldResolver((_return) => User)

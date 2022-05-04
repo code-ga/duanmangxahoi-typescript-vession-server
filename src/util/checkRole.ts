@@ -1,4 +1,3 @@
-/* eslint-disable no-shadow */
 import { role } from '../types/RoleEnum';
 
 export const checkRoleCanDeletePost = (roleUser: role[]): boolean => {
@@ -49,3 +48,8 @@ export const checkRoleCanDeleteAlertPost = (roleUser: role[]): boolean => {
 	];
 	return roleCanDeleteAlertPost.some((role) => roleUser.includes(role));
 };
+
+export const checkRoleCanUpdateAppInfo = (roleUser: role[]): boolean => {
+	const roleCanUpdateAppInfo = [role.superAdmin];
+	return roleCanUpdateAppInfo.some((role) => roleUser.includes(role));
+}
