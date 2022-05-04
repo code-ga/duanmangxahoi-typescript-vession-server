@@ -33,7 +33,7 @@ const bcryptSalt = 10
 export class UserResolver {
 	ClassName: string
 	constructor() {
-		this.ClassName = 'User'
+		this.ClassName = this.constructor.name
 	}
 	@Query(() => User, {
 		nullable: true,

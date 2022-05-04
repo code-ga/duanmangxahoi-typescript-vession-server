@@ -17,12 +17,19 @@ import {UserResolver} from './resolvers/User'
 import {PostResolver} from './resolvers/Post'
 import {LogPluginForApolloServer} from './util/logger'
 import cors from 'cors'
+import {AppInfoModel} from './model/appInfo'
+import { AppInfoResolver } from './resolvers/AppInfo'
 dotenv.config({path: path.resolve(__dirname, './.env')})
 const main = async () => {
 	const startTime = new Date()
 	const app = express()
 	const MongoUrl = process.env.DB_URL as string
 	const connection = await connectToDB(MongoUrl)
+	const appInfo = await AppInfoModel.findOne({})
+	if (!appInfo) {
+		await new AppInfoModel({}).save()
+	}
+
 	app.use(
 		session({
 			name: COOKIE_NAME,
@@ -46,11 +53,12 @@ const main = async () => {
 			credentials: true,
 		}),
 	)
+	const schema = await buildSchema({
+		resolvers: [HelloResolver, UserResolver, PostResolver, AppInfoResolver],
+		validate: false,
+	})
 	const apolloServer = new ApolloServer({
-		schema: await buildSchema({
-			resolvers: [HelloResolver, UserResolver, PostResolver],
-			validate: false,
-		}),
+		schema,
 		plugins: [
 			ApolloServerPluginLandingPageGraphQLPlayground(),
 			LogPluginForApolloServer,
