@@ -2,14 +2,13 @@ import {
 	getModelForClass,
 	ModelOptions,
 	prop as Property,
-	Ref,
-} from '@typegoose/typegoose';
-import {defaultCategory} from '../constraint';
-import {Field, ObjectType} from 'type-graphql';
-import Comment from './comment';
-import LikeModel from './LikeModel';
-import {Category} from './Category';
-import User from './user';
+} from '@typegoose/typegoose'
+import {defaultCategory} from '../constraint'
+import {Field, ObjectType} from 'type-graphql'
+import Comment from './comment'
+import LikeModel from './LikeModel'
+import {Category} from './Category'
+import User from './user'
 @ObjectType()
 @ModelOptions({
 	schemaOptions: {
@@ -20,12 +19,12 @@ export class Post {
 	// title field
 	@Field()
 	@Property({required: true})
-	public title: string;
+	public title: string
 	// content field
 
 	@Field()
 	@Property({required: true})
-	public content: string;
+	public content: string
 	// author field
 
 	@Field(() => String)
@@ -39,32 +38,23 @@ export class Post {
 	// image field
 	@Field(() => [String])
 	@Property({required: true, default: [], type: () => [String]})
-	public photo: string[];
+	public photo: string[]
 
 	// keywords field
 	@Field(() => [String], {nullable: true})
 	@Property({default: [], required: true, type: () => [String]})
-	public keyword: string[]; // this field is optional the server is generate keyword from title
-
-	// time field
-	@Field()
-	@Property()
-	public createdAt: Date;
+	public keyword: string[] // this field is optional the server is generate keyword from title
 
 	@Field()
-	@Property()
-	public updatedAt: Date;
-
-	@Field()
-	public _id: string;
+	public _id: string
 
 	@Field()
 	@Property({required: true, default: defaultCategory, ref: Category})
-	public category: string;
+	public category: string
 
 	@Field()
 	@Property({default: 0})
-	public views: number;
+	public views: number
 
 	@Field(() => [String], {nullable: true})
 	@Property({
@@ -73,12 +63,12 @@ export class Post {
 		ref: () => Comment,
 		type: () => [String],
 	})
-	public comments: string[];
+	public comments: string[]
 
 	// is alert post
 	@Field()
 	@Property({default: false})
-	public isAlert: boolean;
+	public isAlert: boolean
 
 	// like field
 	@Field(() => [String])
@@ -88,12 +78,21 @@ export class Post {
 		ref: () => LikeModel,
 		type: () => [String],
 	})
-	public likes: string[];
+	public likes: string[]
 
 	// like number
 	@Field()
 	@Property({default: 0})
-	public likeNumber: number;
+	public likeNumber: number
+	
+	// time field
+	@Field()
+	@Property()
+	public createdAt: Date
+
+	@Field()
+	@Property()
+	public updatedAt: Date
 }
-export default Post;
-export const postModel = getModelForClass(Post);
+export default Post
+export const postModel = getModelForClass(Post)
