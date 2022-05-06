@@ -18,7 +18,7 @@ import {PostResolver} from './resolvers/Post'
 import {LogPluginForApolloServer} from './util/logger'
 import cors from 'cors'
 import {AppInfoModel} from './model/appInfo'
-import { AppInfoResolver } from './resolvers/AppInfo'
+import {AppInfoResolver} from './resolvers/AppInfo'
 dotenv.config({path: path.resolve(__dirname, './.env')})
 const main = async () => {
 	const startTime = new Date()
@@ -35,7 +35,7 @@ const main = async () => {
 			name: COOKIE_NAME,
 			store: MongoStore.create({mongoUrl: process.env.DB_URL as string}),
 			cookie: {
-				maxAge: 1000 * 60 * 60, // 1 HOURS
+				maxAge: 1000 * 60 * 60 * 12, // 1 HOURS
 				httpOnly: true,
 				sameSite: 'lax', // csrf
 				secure: process.env.NODE_ENV === 'production', // cookie only works in https
@@ -47,7 +47,7 @@ const main = async () => {
 	)
 	app.use(
 		cors({
-			origin: function (origin, callback) {
+			origin: (origin, callback) => {
 				callback(null, true)
 			},
 			credentials: true,
