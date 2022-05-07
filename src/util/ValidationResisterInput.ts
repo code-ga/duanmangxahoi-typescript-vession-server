@@ -1,8 +1,9 @@
+import { minPasswordLength } from '../constraint'
 import {CodeError} from '../types/codeError'
 import {resisterInput} from './../types/RegisterInput'
 
 export const checkPasswordIsValid = (password: string) => {
-	if (password.length < 6) {
+	if (password.length < minPasswordLength) {
 		return false
 	}
 	return true

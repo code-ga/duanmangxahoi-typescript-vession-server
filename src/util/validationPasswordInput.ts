@@ -1,11 +1,12 @@
 import {CodeError} from '../types/codeError';
 import {ChangePasswordAfterLoginInputType} from '../types/changePasswordInputType';
 import bcrypt from 'bcrypt';
+import { minPasswordLength } from '../constraint';
 export const ValidationChangePasswordInput = async (
 	ChangePasswordInput: ChangePasswordAfterLoginInputType,
 	oldPasswordInDatabase: string,
 ) => {
-	if (ChangePasswordInput.oldPassword.length < 6) {
+	if (ChangePasswordInput.oldPassword.length < minPasswordLength) {
 		return {
 			success: false,
 			message: 'Old password is not valid',
@@ -17,7 +18,7 @@ export const ValidationChangePasswordInput = async (
 				},
 			],
 		};
-	} else if (ChangePasswordInput.newPassword.length < 6) {
+	} else if (ChangePasswordInput.newPassword.length < minPasswordLength) {
 		return {
 			success: false,
 			message: 'New password is not valid',
