@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer'
-import mailjet from 'node-mailjet'
 
 export const sendEmailWithNodeMailer = async (
 	to: string,
@@ -46,41 +45,4 @@ export const sendEmail = async (
 	subject = 'Change Password',
 ) => {
 	await sendEmailWithNodeMailer(to, html, subject)
-}
-export const sendEmailMailjet = () => {
-	if (!process.env.MAILJET_API_KEY || !process.env.MAILJET_API_SECRET) {
-		throw new Error('SEND_EMAIL_USER or SEND_EMAIL_PASS is not set')
-	}
-	const client = mailjet.connect(
-		process.env.MAILJET_API_KEY || '',
-		process.env.MAILJET_API_SECRET || '',
-	)
-	const request = client.post('send', {version: 'v3.1'}).request({
-		Messages: [
-			{
-				From: {
-					Email: 'pilot@mailjet.com',
-					Name: 'Mailjet Pilot',
-				},
-				To: [
-					{
-						Email: 'passenger1@mailjet.com',
-						Name: 'passenger 1',
-					},
-				],
-				Subject: 'Your email flight plan!',
-				TextPart:
-					'Dear passenger 1, welcome to Mailjet! May the delivery force be with you!',
-				HTMLPart:
-					'<h3>Dear passenger 1, welcome to <a href="https://www.mailjet.com/">Mailjet</a>!</h3><br />May the delivery force be with you!',
-			},
-		],
-	})
-	request
-		.then((result) => {
-			console.log(result.body)
-		})
-		.catch((err) => {
-			console.log(err.statusCode)
-		})
 }
