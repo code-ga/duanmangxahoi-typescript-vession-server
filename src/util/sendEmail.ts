@@ -6,9 +6,6 @@ export const sendEmailWithNodeMailer = async (
 	subject = 'Change Password',
 ) => {
 	const testAccount = await nodemailer.createTestAccount()
-	// if (!process.env.SEND_EMAIL_USER || !process.env.SEND_EMAIL_PASS) {
-	// 	throw new Error('SEND_EMAIL_USER or SEND_EMAIL_PASS is not set')
-	// }
 	const transporter = nodemailer.createTransport({
 		// setting host
 		host: 'smtp.ethereal.email',
@@ -18,8 +15,6 @@ export const sendEmailWithNodeMailer = async (
 			// for test account
 			user: testAccount.user, // generated ethereal user
 			pass: testAccount.pass, // generated ethereal password
-			// user: process.env.SEND_EMAIL_USER,
-			// pass: process.env.SEND_EMAIL_PASS,
 		},
 		tls: {
 			rejectUnauthorized: false,
@@ -28,7 +23,7 @@ export const sendEmailWithNodeMailer = async (
 
 	// send mail with defined transport object
 	const info = await transporter.sendMail({
-		from: `"Fred Foo 👻" <${testAccount.user}`, // sender address process.env.SEND_EMAIL_USER
+		from: `"Fred Foo 👻" <${testAccount.user}`, // sender address
 		to, // list of receivers
 		subject, // Subject line
 		html, // html body
