@@ -125,15 +125,22 @@ export class PostResolver {
 				{_id: userId},
 				{$push: {posts: newPost._id}},
 			)
-			const postReturn = await postModel.find({}).lean().exec()
 			log.log(
 				this.ClassName,
 				`User [${userId}] create post with data: ${postData}`,
 			)
+			const postReturn = await postModel.findOne({_id: newPost._id}).lean().exec()
+			if (!postReturn) {
+				return {
+					code: CodeError.internal_server_error,
+					message: 'Internal Server Error',
+					success: false,
+				}
+			}
 			return {
 				code: CodeError.create_post_success,
 				message: 'Post created successfully',
-				posts: postReturn,
+				posts: [postReturn],
 				success: true,
 			}
 		} catch (error) {
@@ -222,7 +229,7 @@ export class PostResolver {
 				message: 'Internal Server Error server error is the ' + error.message,
 				success: false,
 			}
-			return null
+			// return null
 		}
 	}
 
@@ -324,13 +331,31 @@ export class PostResolver {
 							...dataInput,
 							photo: [],
 					  }
-			await postModel.findOneAndUpdate(
-				{_id: id},
-				{
-					...dataUpdate,
-				},
-			)
-
+			const PostReturn = await postModel
+				.findOneAndUpdate(
+					{_id: id},
+					{
+						...dataUpdate,
+					},
+					{
+						new: true,
+					},
+				)
+				.lean()
+				.exec() // không biết đặt tên là gì nên đặt hơi trùng
+			if (!PostReturn) {
+				return {
+					code: CodeError.post_not_found,
+					message: 'Post you want to update is not found',
+					success: false,
+					errors: [
+						{
+							field: 'id',
+							message: 'Post you want to update is not found',
+						},
+					],
+				}
+			}
 			// if dataInput.category !== postData.category delete post in category model
 			if (dataInput.category !== postData.category) {
 				await CategoryModel.findOneAndUpdate(
@@ -348,12 +373,11 @@ export class PostResolver {
 					}).save()
 				}
 			}
-			const postReturn = await postModel.find({}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] update post with id: ${id}`)
 			return {
 				code: CodeError.update_post_success,
 				message: 'Post updated successfully',
-				posts: postReturn,
+				posts: [PostReturn],
 				success: true,
 			}
 		} catch (error) {
@@ -435,7 +459,20 @@ export class PostResolver {
 					],
 				}
 			}
-			await postModel.findOneAndDelete({_id: id})
+			const postReturn = await postModel.findOneAndDelete({ _id: id })
+			if (!postReturn) {
+				return {
+					code: CodeError.post_not_found,
+					message: 'Post you want to update is not found',
+					success: false,
+					errors: [
+						{
+							field: 'id',
+							message: 'Post you want to update is not found',
+						},
+					],
+				}
+			}
 			await CommentModel.deleteMany({post: id})
 			await likeModel.deleteMany({post: id})
 			await CategoryModel.findOneAndUpdate(
@@ -443,12 +480,11 @@ export class PostResolver {
 				{$pull: {posts: id}},
 			)
 			await userModel.findOneAndUpdate({_id: authorId}, {$pull: {posts: id}})
-			const postReturn = await postModel.find({}).lean().exec()
 			log.log(this.ClassName, `User [${userId}] delete post with id: ${id}`)
 			return {
 				code: CodeError.delete_post_success,
 				message: 'Post deleted successfully',
-				posts: postReturn,
+				posts: [postReturn],
 				success: true,
 			}
 		} catch (error) {
@@ -486,7 +522,6 @@ export class PostResolver {
 		}
 	}
 
-	
 	// get alert post
 	@Query(() => CreatePostMutationResponse, {nullable: true})
 	async GetAlertPost(

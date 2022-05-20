@@ -10,6 +10,10 @@ export class CreatePostMutationResponse implements IMutationResponse {
 	message?: string
 	@Field(() => [FieldError], {nullable: true})
 	errors?: FieldError[]
-	@Field(() => [Post], {nullable: true})
+	@Field(() => [Post], {
+		nullable: true,
+		description:
+			'for create post or update or delete server return post info after create or update or delete',
+	})
 	posts?: Post[]
 }
